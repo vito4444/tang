@@ -13,6 +13,7 @@ LingyanUnity/crashlytics-build.properties
 
 # Build outputs
 Builds/
+artifacts/
 *.apk
 *.unitypackage
 
