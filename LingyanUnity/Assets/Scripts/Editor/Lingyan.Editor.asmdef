@@ -1,0 +1,19 @@
+{
+    "name": "Lingyan.Editor",
+    "rootNamespace": "Lingyan.EditorTools",
+    "references": [
+        "Lingyan.Core",
+        "Lingyan.Game"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
