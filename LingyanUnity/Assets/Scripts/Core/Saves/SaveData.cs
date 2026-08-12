@@ -1,0 +1,132 @@
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace Lingyan.Core.Saves
+{
+    /// <summary>
+    /// 存档根对象，schema v1。
+    /// 关键字段一律 Required：迁移或格式出错时必须响亮失败，
+    /// 绝不允许"照常打开但钱是 0、官阶不对、线索没了"。
+    /// </summary>
+    public sealed class SaveData
+    {
+        public const int CurrentVersion = 1;
+
+        [JsonProperty("schemaVersion", Required = Required.Always)]
+        public int SchemaVersion { get; set; } = CurrentVersion;
+
+        [JsonProperty("createdUtc", Required = Required.Always)]
+        public string CreatedUtc { get; set; }
+
+        [JsonProperty("protagonist", Required = Required.Always)]
+        public string ProtagonistKey { get; set; }
+
+        [JsonProperty("name", Required = Required.Always)]
+        public string CharacterName { get; set; }
+
+        /// <summary>白身专属；其余主角为 null，但字段必须存在。</summary>
+        [JsonProperty("entryPath", Required = Required.AllowNull)]
+        public string EntryPath { get; set; }
+
+        [JsonProperty("attributes", Required = Required.Always)]
+        public SaveAttributes Attributes { get; set; }
+
+        [JsonProperty("offices", Required = Required.Always)]
+        public SaveOffices Offices { get; set; }
+
+        [JsonProperty("reputation", Required = Required.Always)]
+        public SaveReputation Reputation { get; set; }
+
+        [JsonProperty("reputationLedger", Required = Required.Always)]
+        public List<SaveLedgerEntry> ReputationLedger { get; set; } = new List<SaveLedgerEntry>();
+
+        [JsonProperty("moneyWen", Required = Required.Always)]
+        public long MoneyWen { get; set; }
+
+        [JsonProperty("date", Required = Required.Always)]
+        public SaveDate Date { get; set; }
+
+        /// <summary>剧情分支持久化落点（第 4 阶段起写入）。</summary>
+        [JsonProperty("storyFlags", Required = Required.Always)]
+        public Dictionary<string, bool> StoryFlags { get; set; } = new Dictionary<string, bool>();
+
+        [JsonProperty("counters", Required = Required.Always)]
+        public Dictionary<string, int> Counters { get; set; } = new Dictionary<string, int>();
+    }
+
+    public sealed class SaveAttributes
+    {
+        [JsonProperty("stamina", Required = Required.Always)]
+        public int Stamina { get; set; }
+
+        [JsonProperty("health", Required = Required.Always)]
+        public int Health { get; set; }
+
+        [JsonProperty("strength", Required = Required.Always)]
+        public int Strength { get; set; }
+
+        [JsonProperty("wisdom", Required = Required.Always)]
+        public int Wisdom { get; set; }
+    }
+
+    /// <summary>四轨并行的当前身份。</summary>
+    public sealed class SaveOffices
+    {
+        [JsonProperty("zhishi", Required = Required.AllowNull)]
+        public string ZhiShiId { get; set; }
+
+        [JsonProperty("sanguan", Required = Required.AllowNull)]
+        public string SanGuanId { get; set; }
+
+        [JsonProperty("xunZhuan", Required = Required.Always)]
+        public int XunZhuan { get; set; }
+
+        [JsonProperty("jue", Required = Required.AllowNull)]
+        public string JueId { get; set; }
+    }
+
+    public sealed class SaveReputation
+    {
+        [JsonProperty("guansheng", Required = Required.Always)]
+        public int GuanSheng { get; set; }
+
+        [JsonProperty("minwang", Required = Required.Always)]
+        public int MinWang { get; set; }
+
+        [JsonProperty("jianghu", Required = Required.Always)]
+        public int JiangHu { get; set; }
+    }
+
+    public sealed class SaveLedgerEntry
+    {
+        [JsonProperty("track", Required = Required.Always)]
+        public string Track { get; set; }
+
+        [JsonProperty("delta", Required = Required.Always)]
+        public int Delta { get; set; }
+
+        [JsonProperty("source", Required = Required.Always)]
+        public string SourceKey { get; set; }
+
+        [JsonProperty("date", Required = Required.Always)]
+        public string DateStamp { get; set; }
+    }
+
+    public sealed class SaveDate
+    {
+        [JsonProperty("era", Required = Required.Always)]
+        public string EraId { get; set; }
+
+        [JsonProperty("eraYear", Required = Required.Always)]
+        public int EraYear { get; set; }
+
+        [JsonProperty("month", Required = Required.Always)]
+        public int Month { get; set; }
+
+        [JsonProperty("day", Required = Required.Always)]
+        public int Day { get; set; }
+
+        [JsonProperty("hourIndex", Required = Required.Always)]
+        public int HourIndex { get; set; }
+    }
+}
