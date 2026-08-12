@@ -46,6 +46,13 @@ namespace UnityEngine
         public int childCount { get { return 0; } }
         public Transform GetChild(int index) { return null; }
         public Transform Find(string n) { return null; }
+        public Quaternion localRotation { get; set; }
+    }
+
+    public struct Quaternion
+    {
+        public static Quaternion identity { get { return default; } }
+        public static Quaternion Euler(float x, float y, float z) { return default; }
     }
 
     public class RectTransform : Transform
@@ -96,8 +103,10 @@ namespace UnityEngine
         public static int RoundToInt(float f) { return (int)Math.Round(f); }
         public static float Max(float a, float b) { return Math.Max(a, b); }
         public static int Max(int a, int b) { return Math.Max(a, b); }
+        public static float Min(float a, float b) { return Math.Min(a, b); }
         public static float Clamp01(float v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
         public static float Abs(float v) { return Math.Abs(v); }
+        public static float Sqrt(float v) { return (float)Math.Sqrt(v); }
         public static float PerlinNoise(float x, float y) { return 0.5f; }
     }
 
@@ -144,6 +153,7 @@ namespace UnityEngine
         public Texture2D(int width, int height, TextureFormat format, bool mipChain) { }
         public TextureWrapMode wrapMode { get; set; }
         public void SetPixel(int x, int y, Color color) { }
+        public void SetPixels(Color[] colors) { }
         public void Apply() { }
     }
 
@@ -233,6 +243,25 @@ namespace UnityEngine.EventSystems
     public class PointerInputModule : BaseInputModule { }
 
     public class StandaloneInputModule : PointerInputModule { }
+
+    public abstract class BaseEventData { }
+
+    public class PointerEventData : BaseEventData
+    {
+        public PointerEventData(EventSystem eventSystem) { }
+    }
+
+    public interface IEventSystemHandler { }
+
+    public interface IPointerEnterHandler : IEventSystemHandler
+    {
+        void OnPointerEnter(PointerEventData eventData);
+    }
+
+    public interface IPointerExitHandler : IEventSystemHandler
+    {
+        void OnPointerExit(PointerEventData eventData);
+    }
 }
 
 namespace UnityEngine.UI

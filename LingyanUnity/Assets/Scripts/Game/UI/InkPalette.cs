@@ -11,8 +11,11 @@ namespace Lingyan.Game.UI
         /// <summary>底色：近黑的暖墨。</summary>
         public static readonly Color Void = Hex("14120F");
 
-        /// <summary>渐变顶部略暖。</summary>
-        public static readonly Color VoidTop = Hex("201B15");
+        /// <summary>渐变顶部略暖。与 tools/render_mockups.py 的 PALETTE 同值，改必同步。</summary>
+        public static readonly Color VoidTop = Hex("221D16");
+
+        /// <summary>印面纸色（印章白文、点缀）。</summary>
+        public static readonly Color SealPaper = Hex("EDE4D2");
 
         /// <summary>主文字：宣纸色。</summary>
         public static readonly Color PaperText = Hex("D9CFBA");

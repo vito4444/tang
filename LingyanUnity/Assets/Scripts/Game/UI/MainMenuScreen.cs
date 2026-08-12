@@ -13,32 +13,37 @@ namespace Lingyan.Game.UI
 
             // 题字
             TMPro.TextMeshProUGUI title = UiKit.Text(
-                UiKit.At(root, "Title", 0.5f, 0.72f, 900, 220),
+                UiKit.At(root, "Title", 0.5f, 0.735f, 900, 220),
                 "TitleText", c.L10n.Tr("game.title"), 5.2f,
                 InkPalette.PaperText, TextAlignmentOptions.Center);
             title.characterSpacing = 18f;
+
+            UiKit.Hairline(root, "TitleRule", 0.5f, 0.625f, 660, 0.31f);
 
             UiKit.Text(
                 UiKit.At(root, "Subtitle", 0.5f, 0.585f, 900, 44),
                 "SubtitleText", c.L10n.Tr("game.subtitle"), 1.0f,
                 InkPalette.Faint, TextAlignmentOptions.Center);
 
-            // 朱砂印（题字右下角）
-            RectTransform seal = UiKit.At(root, "Seal", 0.5f, 0.66f, 84, 84);
-            seal.anchoredPosition = new Vector2(320, 30);
+            // 朱砂印（微斜如钤印）：中文贴题字右侧压角，英文题字长、挪到末端之外
+            RectTransform seal = UiKit.At(root, "Seal", 0.5f, 0.775f, 84, 84);
+            seal.anchoredPosition = new Vector2(
+                c.L10n.Locale == Locale.ZhHans ? 315 : 585, 40);
+            seal.localRotation = Quaternion.Euler(0, 0, -4f);
             UnityEngine.UI.Image sealBox = UiKit.Swatch(seal, "SealBox", InkPalette.Seal);
             UiKit.Stretch(sealBox.rectTransform);
+            UiKit.Frame(seal, "SealRim", InkPalette.SealPaper, 0.32f, 4f);
             TextMeshProUGUI sealText = UiKit.Text(seal, "SealText", "凌\n烟", 1.0f,
-                InkPalette.Hex("EDE4D2"), TextAlignmentOptions.Center);
+                InkPalette.SealPaper, TextAlignmentOptions.Center);
             UiKit.Stretch(sealText.rectTransform);
             sealText.lineSpacing = -18f;
 
-            // 读档失败等待展示的错误（响亮，双编码：✘ + 色）
+            // 读档失败等待展示的错误（响亮，双编码：✗ + 色）
             if (!string.IsNullOrEmpty(c.PendingErrorKey))
             {
                 UiKit.Text(
                     UiKit.At(root, "Error", 0.5f, 0.50f, 1400, 60),
-                    "ErrorText", "✘ " + c.L10n.Tr(c.PendingErrorKey), 1.0f,
+                    "ErrorText", "\u2717 " + c.L10n.Tr(c.PendingErrorKey), 1.0f,
                     InkPalette.Bad, TextAlignmentOptions.Center);
                 c.ClearPendingError();
             }

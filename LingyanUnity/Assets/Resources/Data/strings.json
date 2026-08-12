@@ -92,7 +92,7 @@
   "settings.font_scale": { "zh": "字号", "en": "Text Size" },
   "settings.font_scale_value": { "zh": "{0}%（基准 {1} px）", "en": "{0}% (base {1} px)" },
   "settings.font_scale_note": { "zh": "中文基准字号 22 px，只增不减", "en": "Chinese base font size is 22 px and only scales up" },
-  "settings.colorblind_note": { "zh": "好恶增减一律以 ✔/✘ 符号与颜色双编码", "en": "Approval and loss are always double-coded with ✔/✘ symbols plus color" },
+  "settings.colorblind_note": { "zh": "好恶增减一律以 ✓/✗ 符号与颜色双编码", "en": "Approval and loss are always double-coded with ✓/✗ symbols plus color" },
   "settings.back": { "zh": "返回", "en": "Back" },
 
   "save.error.corrupt": { "zh": "存档受损，已停止读取。绝不带着缺损的档继续——那比读档失败更糟。", "en": "The save file is damaged, so loading was stopped. We never continue on a broken save—that is worse than failing to load." },

@@ -32,6 +32,22 @@ UNITY_PATH=/path/to/Unity ./tools/build_windows.sh
 - PlayerSettings（公司名/产品名/版本/关 Unity 启动画面/1920×1080）由构建脚本统一写入，
   不依赖手工点选。
 
+## 界面预览渲染器（自动化验收截图工具的雏形）
+
+```bash
+python3 tools/render_mockups.py
+```
+
+输出 `artifacts/screenshots/*.png`（主菜单中英、建角、书房、设置）与 `metrics.json`，
+终端打印每屏明度 P5/中位/P95 与饱和度均值——规格第十四节要求的"可比较的数字"，
+调色改动前后跑两次即可对比，不靠眼睛记忆。
+
+定位说明：文案、术语、色板、字体、布局比例与游戏同源
+（strings.json / glossary.json / InkPalette 同值、霞鹜文楷同一份 TTF），
+但光栅化走 FreeType，与 Unity TMP 的 SDF 渲染存在字形微差；
+背景生成算法（渐变 + 三层远山 + 纸纹 + 晕影）与 `UiKit.InkSprite()` 同构同参。
+引擎内截图在 Unity 许可就位后以同一指标口径复核。
+
 ## Unity 内测试
 
 - editmode：Window → General → Test Runner → EditMode，`Lingyan.Core.Tests`

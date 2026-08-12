@@ -43,25 +43,25 @@ namespace Lingyan.Game.UI
                 Vector2.zero, Vector2.zero);
             UiKit.PanelBox(left, "PanelBg");
 
-            float y = 0.90f;
+            float y = 0.89f;
             SectionHead(c, left, "AttrHead", y, en ? "Attributes" : "四维");
-            y -= 0.095f;
-            Row(left, "A1", y, c.L10n.Tr("attr.stamina"), save.Attributes.Stamina.ToString());
-            y -= 0.075f;
-            Row(left, "A2", y, c.L10n.Tr("attr.health"), save.Attributes.Health.ToString());
-            y -= 0.075f;
-            Row(left, "A3", y, c.L10n.Tr("attr.strength"), save.Attributes.Strength.ToString());
-            y -= 0.075f;
-            Row(left, "A4", y, c.L10n.Tr("attr.wisdom"), save.Attributes.Wisdom.ToString());
+            y -= 0.105f;
+            AttrRow(left, "A1", y, c.L10n.Tr("attr.stamina"), save.Attributes.Stamina);
+            y -= 0.082f;
+            AttrRow(left, "A2", y, c.L10n.Tr("attr.health"), save.Attributes.Health);
+            y -= 0.082f;
+            AttrRow(left, "A3", y, c.L10n.Tr("attr.strength"), save.Attributes.Strength);
+            y -= 0.082f;
+            AttrRow(left, "A4", y, c.L10n.Tr("attr.wisdom"), save.Attributes.Wisdom);
 
-            y -= 0.11f;
+            y -= 0.115f;
             SectionHead(c, left, "RepHead", y, c.L10n.Tr("study.reputation"));
-            y -= 0.095f;
-            Row(left, "R1", y, c.L10n.Tr("rep.guansheng"), save.Reputation.GuanSheng.ToString());
-            y -= 0.075f;
-            Row(left, "R2", y, c.L10n.Tr("rep.minwang"), save.Reputation.MinWang.ToString());
-            y -= 0.075f;
-            Row(left, "R3", y, c.L10n.Tr("rep.jianghu"), save.Reputation.JiangHu.ToString());
+            y -= 0.105f;
+            RepRow(left, "R1", y, c.L10n.Tr("rep.guansheng"), save.Reputation.GuanSheng);
+            y -= 0.082f;
+            RepRow(left, "R2", y, c.L10n.Tr("rep.minwang"), save.Reputation.MinWang);
+            y -= 0.082f;
+            RepRow(left, "R3", y, c.L10n.Tr("rep.jianghu"), save.Reputation.JiangHu);
 
             // 右列：四轨 + 服色 + 钱 + 时日
             RectTransform right = UiKit.Rect(root, "RightPanel",
@@ -151,6 +151,7 @@ namespace Lingyan.Game.UI
         {
             UiKit.Text(UiKit.At(panel, name, 0.5f, y, 640, 50),
                 "T", text, 1.25f, InkPalette.Seal, TextAlignmentOptions.Center);
+            UiKit.Hairline(panel, name + "_Rule", 0.5f, y - 0.042f, 420, 0.17f);
         }
 
         private static void Row(
@@ -160,6 +161,28 @@ namespace Lingyan.Game.UI
                 "T", label, 1.05f, InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
             UiKit.Text(UiKit.At(panel, name + "_V", 0.68f, y, 560, 46),
                 "T", value, 1.1f, InkPalette.PaperText, TextAlignmentOptions.MidlineLeft);
+        }
+
+        /// <summary>四维行：标签 + 数值 + 十二格双编码。</summary>
+        private static void AttrRow(
+            RectTransform panel, string name, float y, string label, int value)
+        {
+            UiKit.Text(UiKit.At(panel, name + "_L", 0.17f, y, 220, 46),
+                "T", label, 1.05f, InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
+            UiKit.Text(UiKit.At(panel, name + "_V", 0.36f, y, 80, 46),
+                "T", value.ToString(), 1.15f, InkPalette.PaperText, TextAlignmentOptions.Center);
+            UiKit.Cells(panel, name + "_Cells", 0.48f, y, value);
+        }
+
+        /// <summary>名声行：标签 + 数值 + 朱砂进度条（0–100）。</summary>
+        private static void RepRow(
+            RectTransform panel, string name, float y, string label, int value)
+        {
+            UiKit.Text(UiKit.At(panel, name + "_L", 0.17f, y, 220, 46),
+                "T", label, 1.05f, InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
+            UiKit.Text(UiKit.At(panel, name + "_V", 0.36f, y, 80, 46),
+                "T", value.ToString(), 1.15f, InkPalette.PaperText, TextAlignmentOptions.Center);
+            UiKit.Bar(panel, name + "_Bar", 0.66f, y, 300, value / 100f);
         }
 
         private static string RobeKey(RobeColor robe)

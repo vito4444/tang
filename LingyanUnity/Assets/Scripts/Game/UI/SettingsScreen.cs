@@ -16,6 +16,7 @@ namespace Lingyan.Game.UI
             UiKit.Text(UiKit.At(root, "Title", 0.5f, 0.9f, 700, 70),
                 "T", c.L10n.Tr("settings.title"), 1.8f,
                 InkPalette.PaperText, TextAlignmentOptions.Center);
+            UiKit.Hairline(root, "TitleRule", 0.5f, 0.856f, 480, 0.24f);
 
             RectTransform panel = UiKit.Rect(root, "Panel",
                 new Vector2(0.24f, 0.2f), new Vector2(0.76f, 0.8f),
@@ -58,7 +59,7 @@ namespace Lingyan.Game.UI
                 "T", c.L10n.Tr("settings.font_scale_note"), 1.0f,
                 InkPalette.Faint, TextAlignmentOptions.Center);
             UiKit.Text(UiKit.At(panel, "Note2", 0.5f, 0.36f, 900, 46),
-                "T", "\u2714 " + c.L10n.Tr("settings.colorblind_note"), 1.0f,
+                "T", "\u2713 " + c.L10n.Tr("settings.colorblind_note"), 1.0f,
                 InkPalette.Good, TextAlignmentOptions.Center);
 
             UiKit.TextButton(UiKit.At(panel, "BtnBack", 0.5f, 0.12f, 300, 56),

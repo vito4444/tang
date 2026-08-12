@@ -26,6 +26,7 @@ namespace Lingyan.Game.UI
             UiKit.Text(UiKit.At(root, "Title", 0.5f, 0.945f, 800, 60),
                 "TitleText", c.L10n.Tr("creation.title"), 1.7f,
                 InkPalette.PaperText, TextAlignmentOptions.Center);
+            UiKit.Hairline(root, "TitleRule", 0.5f, 0.902f, 520, 0.24f);
 
             BuildOriginList(c, root);
             BuildDetail(c, root);
@@ -112,15 +113,18 @@ namespace Lingyan.Game.UI
 
                 if (def.FreeAllocation)
                 {
-                    UiKit.TextButton(UiKit.At(panel, "AttrMinus_" + attr, 0.45f, y, 60, 46),
+                    UiKit.TextButton(UiKit.At(panel, "AttrMinus_" + attr, 0.44f, y, 60, 46),
                         "Btn", "\u2212",
                         () => { CharacterCreationRules.TryDecrease(_draft, captured); RefreshVia(c); },
                         1.2f);
-                    UiKit.TextButton(UiKit.At(panel, "AttrPlus_" + attr, 0.52f, y, 60, 46),
+                    UiKit.TextButton(UiKit.At(panel, "AttrPlus_" + attr, 0.50f, y, 60, 46),
                         "Btn", "+",
                         () => { CharacterCreationRules.TryIncrease(_draft, captured); RefreshVia(c); },
                         1.2f);
                 }
+                // 十二格数值条：格数 + 实心/空心双编码
+                UiKit.Cells(panel, "AttrCells_" + attr, 0.565f, y,
+                    _draft.Attributes.Get(attr));
                 y -= 0.075f;
             }
 
@@ -141,20 +145,20 @@ namespace Lingyan.Game.UI
             }
 
             // 起点信息（右列）
-            float infoY = 0.635f;
+            float infoY = 0.60f;
             InfoRow(c, panel, "InfoMoney", infoY, "creation.start_money",
                 new Money(def.StartMoneyWen).ToZhOrEn(c));
-            InfoRow(c, panel, "InfoStatus", infoY - 0.075f, "creation.start_status",
+            InfoRow(c, panel, "InfoStatus", infoY - 0.10f, "creation.start_status",
                 c.L10n.Tr(def.StartStatusKey));
-            InfoRow(c, panel, "InfoLine", infoY - 0.15f, "creation.career_line",
+            InfoRow(c, panel, "InfoLine", infoY - 0.20f, "creation.career_line",
                 c.L10n.Tr(LineKey(def.Line)));
 
-            // 错误提示（若有）
+            // 错误提示（若有；双编码：✗ + 色）
             string error = CharacterCreationRules.ValidateFinal(_draft);
             if (error != null)
             {
                 UiKit.Text(UiKit.At(panel, "DraftError", 0.5f, 0.05f, 1000, 44),
-                    "T", "\u2718 " + c.L10n.Tr(error), 1.0f,
+                    "T", "\u2717 " + c.L10n.Tr(error), 1.0f,
                     InkPalette.Bad, TextAlignmentOptions.Center);
             }
         }
@@ -189,12 +193,12 @@ namespace Lingyan.Game.UI
             GameController c, RectTransform panel, string name, float y,
             string labelKey, string value)
         {
-            UiKit.Text(UiKit.At(panel, name + "_L", 0.70f, y, 300, 44),
+            UiKit.Text(UiKit.At(panel, name + "_L", 0.80f, y, 300, 40),
                 "T", c.L10n.Tr(labelKey), 1.0f,
                 InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
-            UiKit.Text(UiKit.At(panel, name + "_V", 0.88f, y, 340, 44),
-                "T", value, 1.1f,
-                InkPalette.PaperText, TextAlignmentOptions.MidlineLeft);
+            UiKit.Text(UiKit.At(panel, name + "_V", 0.80f, y - 0.052f, 300, 80),
+                "T", value, 1.05f,
+                InkPalette.PaperText, TextAlignmentOptions.TopLeft);
         }
 
         private static void Confirm(GameController c)
