@@ -34,6 +34,10 @@ namespace UnityEngine
         public T AddComponent<T>() where T : Component { return null; }
         public T GetComponent<T>() { return default; }
         public T GetComponentInChildren<T>() { return default; }
+        public T[] GetComponentsInChildren<T>(bool includeInactive = false)
+        {
+            return Array.Empty<T>();
+        }
         public void SetActive(bool value) { }
         public bool activeSelf { get { return true; } }
         public static GameObject CreatePrimitive(PrimitiveType type) { return null; }

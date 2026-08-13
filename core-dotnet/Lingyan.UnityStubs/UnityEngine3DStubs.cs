@@ -24,6 +24,7 @@ namespace UnityEngine
         public bool enabled { get; set; }
         public Material material { get; set; }
         public Material sharedMaterial { get; set; }
+        public Material[] sharedMaterials { get; set; }
         public bool receiveShadows { get; set; }
     }
 
@@ -37,8 +38,10 @@ namespace UnityEngine
     public class Material : Object
     {
         public Material(Shader shader) { }
+        public Material(Material source) { }
         public Color color { get; set; }
         public Texture mainTexture { get; set; }
+        public Vector2 mainTextureScale { get; set; }
         public void SetFloat(string name, float value) { }
         public void SetColor(string name, Color value) { }
         public void EnableKeyword(string keyword) { }
@@ -78,6 +81,10 @@ namespace UnityEngine
     public static class RenderSettings
     {
         public static Color ambientLight { get; set; }
+        public static Rendering.AmbientMode ambientMode { get; set; }
+        public static Color ambientSkyColor { get; set; }
+        public static Color ambientEquatorColor { get; set; }
+        public static Color ambientGroundColor { get; set; }
         public static bool fog { get; set; }
         public static Color fogColor { get; set; }
         public static float fogDensity { get; set; }
@@ -134,4 +141,9 @@ namespace UnityEngine
             return false;
         }
     }
+}
+
+namespace UnityEngine.Rendering
+{
+    public enum AmbientMode { Skybox = 0, Trilight = 1, Flat = 3, Custom = 4 }
 }

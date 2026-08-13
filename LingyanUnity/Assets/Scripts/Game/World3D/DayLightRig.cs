@@ -37,10 +37,18 @@ namespace Lingyan.Game.World3D
 
             Color lightColor = _light.color;
             float ambientBoost = state.IsMoon ? 0.50f : 0.90f; // 夜里压暗，别把月夜照成阴天
-            RenderSettings.ambientLight = new Color(
+            Color ambient = new Color(
                 lightColor.r * (float)state.Ambient * ambientBoost + (state.IsMoon ? 0.02f : 0.05f),
                 lightColor.g * (float)state.Ambient * ambientBoost + (state.IsMoon ? 0.02f : 0.05f),
                 lightColor.b * (float)state.Ambient * (ambientBoost + 0.05f) + (state.IsMoon ? 0.04f : 0.07f));
+
+            // 三色环境光（写实化）：天光偏冷、地光偏土色反照，立体感来自色温差
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(
+                ambient.r * 0.95f, ambient.g * 1.0f, ambient.b * 1.18f);
+            RenderSettings.ambientEquatorColor = ambient;
+            RenderSettings.ambientGroundColor = new Color(
+                ambient.r * 0.82f, ambient.g * 0.70f, ambient.b * 0.52f);
 
             Color sky = state.IsMoon
                 ? new Color(0.055f, 0.075f, 0.125f)

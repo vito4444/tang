@@ -4,8 +4,10 @@
 用法:
     # 渲染预览（大殿三机位）
     blender -b -P tools/blender/tang_hall.py -- --render artifacts/blender-preview
-    # 导出 Unity 资产（五变体 FBX）
+    # 导出 Unity 资产（五变体 FBX，不烘焙——占位/调试用）
     blender -b -P tools/blender/tang_hall.py -- --export LingyanUnity/Assets/Resources/Models
+    # 写实管线：图集 UV + 烘 albedo×AO/smoothness + FBX（发行路径）
+    blender -b -P tools/blender/tang_hall.py -- --bake LingyanUnity/Assets/Resources/Models
 
 与 LingyanUnity/Assets/Scripts/Core/Architecture/TangArchitectureSpec.cs 同步的红线：
     举高/进深 = 1/6（举折凹曲，檐缓脊陡）；出檐/柱高 = 0.55；铺作层高/柱高 = 0.5；
@@ -48,65 +50,293 @@ set_dims(9.0, 6.0, 3.6)
 
 PROFILE_STEPS = 9
 
-# ---------------- 材质 ----------------
+# ---------------- 材质（程序化 PBR：色层/粗糙度/凹凸全节点，可烘焙） ----------------
 _mats = {}
 
 
-def mat(name, rgb, rough=0.85, tint=0.0):
-    if name in _mats:
-        return _mats[name]
+def _base(name):
+    """新建节点材质，返回 (材质, nodes, links, BSDF, Object 坐标输出)。"""
     m = bpy.data.materials.new(name)
     m.use_nodes = True
-    bsdf = m.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
-    bsdf.inputs["Roughness"].default_value = rough
-    if tint > 0:
-        nodes = m.node_tree.nodes
-        links = m.node_tree.links
-        info = nodes.new("ShaderNodeObjectInfo")
-        ramp = nodes.new("ShaderNodeValToRGB")
-        ramp.color_ramp.elements[0].color = (*[c * (1 - tint) for c in rgb], 1)
-        ramp.color_ramp.elements[1].color = (*[min(1, c * (1 + tint)) for c in rgb], 1)
-        links.new(info.outputs["Random"], ramp.inputs["Fac"])
-        links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+    nodes = m.node_tree.nodes
+    links = m.node_tree.links
+    bsdf = nodes["Principled BSDF"]
+    coord = nodes.new("ShaderNodeTexCoord")
+    return m, nodes, links, bsdf, coord.outputs["Object"]
+
+
+def _noise(nodes, links, vec, scale, detail=2.0, rough=0.5, distortion=0.0):
+    n = nodes.new("ShaderNodeTexNoise")
+    n.inputs["Scale"].default_value = scale
+    n.inputs["Detail"].default_value = detail
+    n.inputs["Roughness"].default_value = rough
+    n.inputs["Distortion"].default_value = distortion
+    links.new(vec, n.inputs["Vector"])
+    return n
+
+
+def _mix_color(nodes, links, fac, a, b):
+    mix = nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    links.new(fac, mix.inputs["Factor"])
+    if hasattr(a, "default_value") or isinstance(a, tuple):
+        mix.inputs[6].default_value = a if isinstance(a, tuple) else a.default_value
+    else:
+        links.new(a, mix.inputs[6])
+    if isinstance(b, tuple):
+        mix.inputs[7].default_value = b
+    else:
+        links.new(b, mix.inputs[7])
+    return mix
+
+
+def _ramp(nodes, links, fac, pos0, col0, pos1, col1):
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = pos0
+    ramp.color_ramp.elements[0].color = col0
+    ramp.color_ramp.elements[1].position = pos1
+    ramp.color_ramp.elements[1].color = col1
+    links.new(fac, ramp.inputs["Fac"])
+    return ramp
+
+
+def _rough_noise(nodes, links, bsdf, vec, base, spread, scale=24.0):
+    """粗糙度 = base ± spread×噪声。"""
+    n = _noise(nodes, links, vec, scale, detail=3.0)
+    ramp = _ramp(nodes, links, n.outputs["Fac"],
+                 0.0, (base - spread,) * 3 + (1,),
+                 1.0, (base + spread,) * 3 + (1,))
+    links.new(ramp.outputs["Color"], bsdf.inputs["Roughness"])
+
+
+def _bump(nodes, links, bsdf, height_out, strength):
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = strength
+    links.new(height_out, bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+
+
+def _per_object_vary(nodes, links, color_out, amount):
+    """ObjectInfo.Random 每件微调明暗（瓦垄/构件不千篇一律）。"""
+    info = nodes.new("ShaderNodeObjectInfo")
+    ramp = _ramp(nodes, links, info.outputs["Random"],
+                 0.0, (1 - amount,) * 3 + (1,), 1.0, (1 + amount,) * 3 + (1,))
+    mul = nodes.new("ShaderNodeMix")
+    mul.data_type = "RGBA"
+    mul.blend_type = "MULTIPLY"
+    mul.inputs["Factor"].default_value = 1.0
+    links.new(color_out, mul.inputs[6])
+    links.new(ramp.outputs["Color"], mul.inputs[7])
+    return mul
+
+
+def _cached(name, build):
+    if name in _mats:
+        return _mats[name]
+    m = build()
     _mats[name] = m
     return m
 
 
 def m_timber():
-    return mat("timber", (0.400, 0.155, 0.092), 0.72)
+    """土朱漆木：漆色明暗云斑 + 细木纹 + 弱凹凸。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("timber")
+        cloud = _noise(nodes, links, vec, 1.6, detail=3.0)
+        base = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.25, (0.235, 0.072, 0.042, 1), 0.75, (0.330, 0.115, 0.062, 1))
+        grain = _noise(nodes, links, vec, 34.0, detail=6.0, rough=0.7, distortion=0.4)
+        mix = _mix_color(nodes, links, grain.outputs["Fac"],
+                         base.outputs["Color"], (0.190, 0.060, 0.036, 1))
+        mix.inputs["Factor"].default_value = 0.0
+        links.new(grain.outputs["Fac"], mix.inputs["Factor"])
+        mix2 = nodes.new("ShaderNodeMix")
+        mix2.data_type = "RGBA"
+        mix2.inputs["Factor"].default_value = 0.16
+        links.new(base.outputs["Color"], mix2.inputs[6])
+        links.new(mix.outputs[2], mix2.inputs[7])
+        vary = _per_object_vary(nodes, links, mix2.outputs[2], 0.05)
+        links.new(vary.outputs[2], bsdf.inputs["Base Color"])
+        _rough_noise(nodes, links, bsdf, vec, 0.68, 0.10, scale=30.0)
+        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.04)
+        return m
+    return _cached("timber", build)
 
 
 def m_timber_dark():
-    return mat("timber_dark", (0.300, 0.118, 0.078), 0.75)
+    def build():
+        m, nodes, links, bsdf, vec = _base("timber_dark")
+        cloud = _noise(nodes, links, vec, 2.0, detail=3.0)
+        base = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.2, (0.165, 0.060, 0.038, 1), 0.8, (0.245, 0.092, 0.055, 1))
+        vary = _per_object_vary(nodes, links, base.outputs["Color"], 0.06)
+        links.new(vary.outputs[2], bsdf.inputs["Base Color"])
+        _rough_noise(nodes, links, bsdf, vec, 0.72, 0.08)
+        return m
+    return _cached("timber_dark", build)
 
 
 def m_wall():
-    return mat("wall", (0.760, 0.715, 0.615), 0.95)
+    """灰泥墙：暖白 + 大块污渍 + 底部返潮 + 抹灰颗粒。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("wall")
+        stain = _noise(nodes, links, vec, 0.9, detail=4.0, rough=0.65)
+        base = _ramp(nodes, links, stain.outputs["Fac"],
+                     0.2, (0.700, 0.652, 0.552, 1), 0.8, (0.800, 0.760, 0.668, 1))
+        sep = nodes.new("ShaderNodeSeparateXYZ")
+        links.new(vec, sep.inputs["Vector"])
+        damp = _ramp(nodes, links, sep.outputs["Z"],
+                     0.0, (0.62, 0.565, 0.46, 1), 0.75, (1, 1, 1, 1))
+        mul = nodes.new("ShaderNodeMix")
+        mul.data_type = "RGBA"
+        mul.blend_type = "MULTIPLY"
+        mul.inputs["Factor"].default_value = 0.55
+        links.new(base.outputs["Color"], mul.inputs[6])
+        links.new(damp.outputs["Color"], mul.inputs[7])
+        links.new(mul.outputs[2], bsdf.inputs["Base Color"])
+        grain = _noise(nodes, links, vec, 160.0, detail=2.0)
+        _rough_noise(nodes, links, bsdf, vec, 0.93, 0.05, scale=90.0)
+        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.025)
+        return m
+    return _cached("wall", build)
 
 
 def m_tile():
-    return mat("tile", (0.148, 0.156, 0.175), 0.88, tint=0.12)
+    """筒瓦青灰：每垄随机深浅 + 风化白霜 + 湿釉般的低粗糙。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("tile")
+        cloud = _noise(nodes, links, vec, 3.0, detail=3.0)
+        base = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.2, (0.118, 0.126, 0.148, 1), 0.8, (0.185, 0.196, 0.220, 1))
+        frost = _noise(nodes, links, vec, 22.0, detail=5.0, rough=0.7)
+        frost_mask = _ramp(nodes, links, frost.outputs["Fac"],
+                           0.78, (0, 0, 0, 1), 0.95, (1, 1, 1, 1))
+        mix = nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        links.new(frost_mask.outputs["Color"], mix.inputs["Factor"])
+        links.new(base.outputs["Color"], mix.inputs[6])
+        mix.inputs[7].default_value = (0.32, 0.335, 0.33, 1)
+        vary = _per_object_vary(nodes, links, mix.outputs[2], 0.12)
+        links.new(vary.outputs[2], bsdf.inputs["Base Color"])
+        _rough_noise(nodes, links, bsdf, vec, 0.58, 0.12, scale=18.0)
+        _bump(nodes, links, bsdf, frost.outputs["Fac"], 0.03)
+        return m
+    return _cached("tile", build)
 
 
 def m_ridge():
-    return mat("ridge", (0.095, 0.100, 0.112), 0.85)
+    """脊饰/鸱尾：近黑陶，微光泽，风化色差。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("ridge")
+        cloud = _noise(nodes, links, vec, 5.0, detail=3.0)
+        base = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.2, (0.052, 0.056, 0.066, 1), 0.8, (0.095, 0.100, 0.112, 1))
+        links.new(base.outputs["Color"], bsdf.inputs["Base Color"])
+        _rough_noise(nodes, links, bsdf, vec, 0.66, 0.10, scale=12.0)
+        return m
+    return _cached("ridge", build)
 
 
 def m_stone():
-    return mat("stone", (0.545, 0.525, 0.475), 0.92)
+    """石灰岩台基/柱础：Voronoi 石斑 + 色噪 + 颗粒凹凸。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("stone")
+        # 条石接缝：低频 Voronoi 细黑缝，不做碎拼
+        voro = nodes.new("ShaderNodeTexVoronoi")
+        voro.feature = "DISTANCE_TO_EDGE"
+        voro.inputs["Scale"].default_value = 1.6
+        links.new(vec, voro.inputs["Vector"])
+        crack = _ramp(nodes, links, voro.outputs["Distance"],
+                      0.0, (0.62, 0.60, 0.56, 1), 0.035, (1, 1, 1, 1))
+        cloud = _noise(nodes, links, vec, 2.4, detail=4.0)
+        tone = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.2, (0.455, 0.438, 0.400, 1), 0.8, (0.525, 0.508, 0.468, 1))
+        mul = nodes.new("ShaderNodeMix")
+        mul.data_type = "RGBA"
+        mul.blend_type = "MULTIPLY"
+        mul.inputs["Factor"].default_value = 1.0
+        links.new(tone.outputs["Color"], mul.inputs[6])
+        links.new(crack.outputs["Color"], mul.inputs[7])
+        links.new(mul.outputs[2], bsdf.inputs["Base Color"])
+        grain = _noise(nodes, links, vec, 90.0, detail=3.0)
+        _rough_noise(nodes, links, bsdf, vec, 0.86, 0.06, scale=60.0)
+        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.04)
+        return m
+    return _cached("stone", build)
 
 
 def m_door():
-    return mat("door", (0.26, 0.185, 0.125), 0.78)
+    """板门：竖向拼板木纹 + 深棕漆。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("door")
+        wave = nodes.new("ShaderNodeTexWave")
+        wave.wave_type = "BANDS"
+        wave.bands_direction = "X"
+        wave.inputs["Scale"].default_value = 5.5
+        wave.inputs["Distortion"].default_value = 3.5
+        wave.inputs["Detail"].default_value = 6.0
+        links.new(vec, wave.inputs["Vector"])
+        base = _ramp(nodes, links, wave.outputs["Fac"],
+                     0.15, (0.165, 0.112, 0.072, 1), 0.85, (0.245, 0.170, 0.110, 1))
+        vary = _per_object_vary(nodes, links, base.outputs["Color"], 0.05)
+        links.new(vary.outputs[2], bsdf.inputs["Base Color"])
+        _rough_noise(nodes, links, bsdf, vec, 0.60, 0.10, scale=26.0)
+        _bump(nodes, links, bsdf, wave.outputs["Fac"], 0.05)
+        return m
+    return _cached("door", build)
 
 
 def m_earth():
-    return mat("earth", (0.560, 0.470, 0.340), 0.95)
+    """夯土墩：土黄 + 水平夯层 + 风化噪。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("earth")
+        wave = nodes.new("ShaderNodeTexWave")
+        wave.wave_type = "BANDS"
+        wave.bands_direction = "Z"
+        wave.inputs["Scale"].default_value = 6.0
+        wave.inputs["Distortion"].default_value = 1.6
+        links.new(vec, wave.inputs["Vector"])
+        layer = _ramp(nodes, links, wave.outputs["Fac"],
+                      0.2, (0.500, 0.408, 0.285, 1), 0.8, (0.585, 0.492, 0.360, 1))
+        cloud = _noise(nodes, links, vec, 8.0, detail=4.0)
+        mix = nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        mix.inputs["Factor"].default_value = 0.35
+        links.new(layer.outputs["Color"], mix.inputs[6])
+        stain = _ramp(nodes, links, cloud.outputs["Fac"],
+                      0.2, (0.46, 0.372, 0.255, 1), 0.8, (0.60, 0.51, 0.38, 1))
+        links.new(stain.outputs["Color"], mix.inputs[7])
+        links.new(mix.outputs[2], bsdf.inputs["Base Color"])
+        grain = _noise(nodes, links, vec, 70.0, detail=3.0)
+        _rough_noise(nodes, links, bsdf, vec, 0.94, 0.04, scale=50.0)
+        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.06)
+        return m
+    return _cached("earth", build)
 
 
 def m_ground():
-    return mat("ground", (0.44, 0.385, 0.30), 0.98)
+    """夯土地面（预览渲染用）。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("ground")
+        cloud = _noise(nodes, links, vec, 0.35, detail=6.0, rough=0.6)
+        base = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.2, (0.400, 0.345, 0.262, 1), 0.8, (0.482, 0.425, 0.330, 1))
+        links.new(base.outputs["Color"], bsdf.inputs["Base Color"])
+        grain = _noise(nodes, links, vec, 24.0, detail=4.0)
+        _rough_noise(nodes, links, bsdf, vec, 0.95, 0.04, scale=20.0)
+        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.08)
+        return m
+    return _cached("ground", build)
+
+
+def mat(name, rgb, rough=0.85, tint=0.0):
+    """兜底纯色材质（个别小件仍在用）。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base(name)
+        bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+        bsdf.inputs["Roughness"].default_value = rough
+        return m
+    return _cached(name, build)
 
 
 # ---------------- 基础件 ----------------
@@ -645,6 +875,145 @@ def export_fbx(path):
     print("[tang_hall] 导出:", path)
 
 
+# ---------------- 烘焙管线（写实化：albedo×AO 进图集，随 FBX 出） ----------------
+
+def _scene_meshes():
+    return [o for o in bpy.context.scene.objects if o.type == "MESH"]
+
+
+def _select_meshes(meshes):
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in meshes:
+        ob.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+
+
+def uv_unwrap_all():
+    """多对象一次 Smart UV Project：全部岛共享打包进同一 0-1（图集）。"""
+    meshes = _scene_meshes()
+    _select_meshes(meshes)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(island_margin=0.004, correct_aspect=True)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def _scene_materials():
+    seen = []
+    for ob in _scene_meshes():
+        for slot in ob.material_slots:
+            if slot.material is not None and slot.material not in seen:
+                seen.append(slot.material)
+    return seen
+
+
+def _attach_bake_targets(image):
+    """每个在用材质挂一个指向同一图集的 Image 节点并设为 active（bake 落点）。"""
+    nodes_added = []
+    for m in _scene_materials():
+        nodes = m.node_tree.nodes
+        node = nodes.get("_bake_target")
+        if node is None:
+            node = nodes.new("ShaderNodeTexImage")
+            node.name = "_bake_target"
+        node.image = image
+        node.select = True
+        nodes.active = node
+        nodes_added.append((m, node))
+    return nodes_added
+
+
+def _detach_bake_targets():
+    for m in _scene_materials():
+        node = m.node_tree.nodes.get("_bake_target")
+        if node is not None:
+            m.node_tree.nodes.remove(node)
+
+
+def _new_image(name, size, noncolor=False):
+    img = bpy.data.images.new(name, size, size, alpha=False, float_buffer=True)
+    if noncolor:
+        img.colorspace_settings.name = "Non-Color"
+    return img
+
+
+def bake_atlas(name, out_dir, size):
+    """烘 DIFFUSE 色/AO/粗糙度 → 合成 RGB=albedo×软化AO、A=1-rough 的单图集。"""
+    import numpy as np
+
+    scene = bpy.context.scene
+    scene.render.engine = "CYCLES"
+    scene.cycles.device = "CPU"
+    scene.render.bake.margin = 6
+
+    # AO 遮蔽用临时地面（不选中不烘焙，只当遮挡体——檐下自然变暗）
+    bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 0, -0.01))
+    ao_ground = bpy.context.object
+    ao_ground.name = "_ao_ground"
+
+    meshes = [o for o in _scene_meshes() if o.name != "_ao_ground"]
+    _select_meshes(meshes)
+
+    img_alb = _new_image(name + "_alb", size)
+    img_ao = _new_image(name + "_ao", size, noncolor=True)
+    img_rough = _new_image(name + "_rough", size, noncolor=True)
+
+    _attach_bake_targets(img_alb)
+    scene.cycles.samples = 1
+    scene.render.bake.use_pass_direct = False
+    scene.render.bake.use_pass_indirect = False
+    scene.render.bake.use_pass_color = True
+    bpy.ops.object.bake(type="DIFFUSE")
+    print("[tang_hall] 烘焙 albedo 完成:", name)
+
+    _attach_bake_targets(img_rough)
+    bpy.ops.object.bake(type="ROUGHNESS")
+    print("[tang_hall] 烘焙 roughness 完成:", name)
+
+    _attach_bake_targets(img_ao)
+    scene.cycles.samples = 48
+    bpy.ops.object.bake(type="AO")
+    print("[tang_hall] 烘焙 AO 完成:", name)
+
+    _detach_bake_targets()
+    bpy.data.objects.remove(ao_ground, do_unlink=True)
+
+    n = size * size * 4
+    alb = np.empty(n, dtype=np.float32)
+    ao = np.empty(n, dtype=np.float32)
+    rough = np.empty(n, dtype=np.float32)
+    img_alb.pixels.foreach_get(alb)
+    img_ao.pixels.foreach_get(ao)
+    img_rough.pixels.foreach_get(rough)
+    alb = alb.reshape(-1, 4)
+    ao_soft = ao.reshape(-1, 4)[:, 0] * 0.72 + 0.28  # AO 柔化：留环境光余地
+    out = np.empty_like(alb)
+    out[:, 0] = alb[:, 0] * ao_soft
+    out[:, 1] = alb[:, 1] * ao_soft
+    out[:, 2] = alb[:, 2] * ao_soft
+    out[:, 3] = 1.0 - rough.reshape(-1, 4)[:, 0]  # A 通道 = smoothness
+
+    img_out = bpy.data.images.new(name + "_albedo", size, size,
+                                  alpha=True, float_buffer=True)
+    img_out.pixels.foreach_set(out.ravel())
+    img_out.filepath_raw = os.path.join(out_dir, name + "_albedo.png")
+    img_out.file_format = "PNG"
+    img_out.save()
+    print("[tang_hall] 图集落盘:", img_out.filepath_raw)
+
+    for img in (img_alb, img_ao, img_rough, img_out):
+        bpy.data.images.remove(img)
+
+
+BAKE_SIZE = {
+    "tang_hall_large": 2048,
+    "tang_gate": 2048,
+    "tang_hall_small": 1024,
+    "tang_hall_post": 1024,
+    "tang_well": 1024,
+}
+
+
 ASSETS = {
     "tang_hall_large": lambda: build_hall(9.0, 6.0, 3.6),
     "tang_hall_small": lambda: build_hall(6.0, 4.5, 3.0, door_w=1.4),
@@ -669,6 +1038,16 @@ def main():
         for name, builder in ASSETS.items():
             clear_scene()
             builder()
+            export_fbx(os.path.join(out_dir, name + ".fbx"))
+        return
+
+    if mode == "--bake":
+        # 写实管线：建模 → 图集 UV → 烘 albedo×AO+smoothness → FBX+贴图成对出
+        for name, builder in ASSETS.items():
+            clear_scene()
+            builder()
+            uv_unwrap_all()
+            bake_atlas(name, out_dir, BAKE_SIZE[name])
             export_fbx(os.path.join(out_dir, name + ".fbx"))
         return
 

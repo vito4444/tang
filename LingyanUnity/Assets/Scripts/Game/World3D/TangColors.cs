@@ -46,6 +46,9 @@ namespace Lingyan.Game.World3D
         private static readonly Dictionary<Color, Material> Cache =
             new Dictionary<Color, Material>();
 
+        private static readonly Dictionary<string, Material> TexCache =
+            new Dictionary<string, Material>();
+
         /// <summary>取（并缓存）纯色 Standard 材质。</summary>
         public static Material Mat(Color color)
         {
@@ -57,6 +60,35 @@ namespace Lingyan.Game.World3D
             material.color = color;
             material.SetFloat("_Glossiness", 0.08f);
             Cache[color] = material;
+            return material;
+        }
+
+        /// <summary>
+        /// 平铺贴图 Standard 材质（写实地表/坊墙，贴图出自 tools/gen_textures.py）。
+        /// 贴图缺失回落纯色并响亮报错——不许静默糊弄。
+        /// </summary>
+        public static Material TexturedMat(
+            string resourcePath, Color fallback, float tileX, float tileY,
+            float glossiness = 0.05f)
+        {
+            string key = resourcePath + "|" + tileX + "x" + tileY;
+            if (TexCache.TryGetValue(key, out Material cached) && cached != null)
+            {
+                return cached;
+            }
+            var texture = Resources.Load<Texture2D>(resourcePath);
+            if (texture == null)
+            {
+                Debug.LogError("[Lingyan] 地表贴图缺失: Resources/" + resourcePath
+                    + "，回落纯色");
+                return Mat(fallback);
+            }
+            var material = new Material(Shader.Find("Standard"));
+            material.mainTexture = texture;
+            material.mainTextureScale = new Vector2(tileX, tileY);
+            material.color = Color.white;
+            material.SetFloat("_Glossiness", glossiness);
+            TexCache[key] = material;
             return material;
         }
     }

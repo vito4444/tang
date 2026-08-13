@@ -99,16 +99,22 @@ namespace Lingyan.Game.World3D
             ground.name = "Ground";
             ground.transform.SetParent(t, false);
             ground.transform.localScale = new Vector3(9f, 1f, 8f); // Plane 原语 10×10 → 90×80
-            MeshKit.Paint(ground, TangColors.Ground);
+            // 写实地表：平铺夯土贴图（每 ~3.2m 一铺），非纯色
+            ground.GetComponent<MeshRenderer>().sharedMaterial =
+                TangColors.TexturedMat("Textures/ground_dirt", TangColors.Ground, 28f, 25f);
 
             BuildWalls(t);
 
             // 巷道：南门直抵北墙的主巷 + 十字支巷（黄土踩实的浅色便道）
             Color lane = new Color(0.62f, 0.56f, 0.45f);
-            MeshKit.Box(t, "LaneMain", new Vector3(0f, 0.012f, -1f),
+            GameObject laneMain = MeshKit.Box(t, "LaneMain", new Vector3(0f, 0.012f, -1f),
                 new Vector3(3.4f, 0.024f, 40f), lane);
-            MeshKit.Box(t, "LaneCross", new Vector3(0f, 0.012f, 2f),
+            laneMain.GetComponent<MeshRenderer>().sharedMaterial =
+                TangColors.TexturedMat("Textures/lane_dirt", lane, 1.2f, 14f);
+            GameObject laneCross = MeshKit.Box(t, "LaneCross", new Vector3(0f, 0.012f, 2f),
                 new Vector3(50f, 0.024f, 2.8f), lane);
+            laneCross.GetComponent<MeshRenderer>().sharedMaterial =
+                TangColors.TexturedMat("Textures/lane_dirt", lane, 17f, 1f);
 
             // 建筑：优先 Blender 精模（tools/blender/tang_hall.py 导出），
             // 缺资产时回退程序化占位并响亮报错——不许静默糊弄。
@@ -175,7 +181,45 @@ namespace Lingyan.Game.World3D
             instance.name = resource;
             instance.transform.localPosition = position;
             instance.transform.localRotation = Quaternion.identity;
+            ApplyBakedAtlas(instance, resource);
             return instance;
+        }
+
+        /// <summary>
+        /// 写实化：整模换烘焙图集材质（albedo×AO 出自 Blender --bake 管线）。
+        /// 材质模板取自 FBX 导入材质（Standard，有资产牵引必入包——D19 教训，
+        /// 不用 Shader.Find 新造）。图集缺失保持导入材质并响亮报错。
+        /// </summary>
+        private static void ApplyBakedAtlas(GameObject instance, string resource)
+        {
+            var atlas = Resources.Load<Texture2D>("Models/" + resource + "_albedo");
+            if (atlas == null)
+            {
+                Debug.LogError("[Lingyan] 烘焙图集缺失: Resources/Models/" + resource
+                    + "_albedo，保持导入材质");
+                return;
+            }
+            Material baked = null;
+            foreach (MeshRenderer renderer in
+                instance.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                if (baked == null)
+                {
+                    baked = new Material(renderer.sharedMaterial);
+                    baked.name = resource + "_baked";
+                    baked.mainTexture = atlas;
+                    baked.mainTextureScale = Vector2.one;
+                    baked.color = Color.white;
+                    baked.SetFloat("_Glossiness", 0.30f);
+                    baked.SetFloat("_Metallic", 0f);
+                }
+                var materials = renderer.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    materials[i] = baked;
+                }
+                renderer.sharedMaterials = materials;
+            }
         }
 
         /// <summary>南门楼：精模优先（门扇节点 GateLeaf_L/R），缺则程序化。</summary>
@@ -216,22 +260,30 @@ namespace Lingyan.Game.World3D
             const float halfX = 26f;
             const float halfZ = 21f;
 
-            // 北、东、西整墙；南墙留 6 米门洞
-            MeshKit.Box(t, "WallN", new Vector3(0, wallHeight / 2f, halfZ),
+            // 北、东、西整墙；南墙留 6 米门洞。夯土贴图（水平夯层）代替纯色。
+            Material wallLong = TangColors.TexturedMat(
+                "Textures/earth_wall", TangColors.RammedEarth, 16f, 1f);
+            Material wallSide = TangColors.TexturedMat(
+                "Textures/earth_wall", TangColors.RammedEarth, 13f, 1f);
+            GameObject wn = MeshKit.Box(t, "WallN", new Vector3(0, wallHeight / 2f, halfZ),
                 new Vector3(halfX * 2f + wallThickness, wallHeight, wallThickness),
                 TangColors.RammedEarth);
+            wn.GetComponent<MeshRenderer>().sharedMaterial = wallLong;
             foreach (float xSign in new[] { -1f, 1f })
             {
-                MeshKit.Box(t, "WallSide", new Vector3(xSign * halfX, wallHeight / 2f, 0),
+                GameObject ws = MeshKit.Box(t, "WallSide",
+                    new Vector3(xSign * halfX, wallHeight / 2f, 0),
                     new Vector3(wallThickness, wallHeight, halfZ * 2f), TangColors.RammedEarth);
+                ws.GetComponent<MeshRenderer>().sharedMaterial = wallSide;
             }
             float southSegWidth = halfX - 3f;
             foreach (float xSign in new[] { -1f, 1f })
             {
-                MeshKit.Box(t, "WallS",
+                GameObject wsouth = MeshKit.Box(t, "WallS",
                     new Vector3(xSign * (3f + southSegWidth / 2f), wallHeight / 2f, -halfZ),
                     new Vector3(southSegWidth + wallThickness, wallHeight, wallThickness),
                     TangColors.RammedEarth);
+                wsouth.GetComponent<MeshRenderer>().sharedMaterial = wallLong;
             }
 
             // 墙帽（夯土墙顶的瓦檐线）
