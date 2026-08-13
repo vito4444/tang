@@ -204,10 +204,17 @@ namespace UnityEngine.SceneManagement
         public string name { get { return null; } }
     }
 
+    public enum LoadSceneMode
+    {
+        Single = 0,
+        Additive = 1
+    }
+
     public static class SceneManager
     {
         public static Scene GetActiveScene() { return default; }
         public static void LoadScene(string sceneName) { }
+        public static event UnityEngine.Events.UnityAction<Scene, LoadSceneMode> sceneLoaded;
     }
 }
 
@@ -216,6 +223,8 @@ namespace UnityEngine.Events
     public delegate void UnityAction();
 
     public delegate void UnityAction<T0>(T0 arg0);
+
+    public delegate void UnityAction<T0, T1>(T0 arg0, T1 arg1);
 
     public class UnityEventBase { }
 
