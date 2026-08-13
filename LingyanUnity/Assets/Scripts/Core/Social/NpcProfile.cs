@@ -43,9 +43,13 @@ namespace Lingyan.Core.Social
         /// <summary>身上钱（文），偷窃上限。</summary>
         public int PurseWen { get; }
 
+        /// <summary>受雇月钱（文）；null = 不受雇（公职、士人）。</summary>
+        public int? HireWageWen { get; }
+
         public NpcProfile(
             string npcId, int baseAffinity, Personality personality,
-            IEnumerable<GiftTaste> tastes, int alertness, int? prowess, int purseWen)
+            IEnumerable<GiftTaste> tastes, int alertness, int? prowess, int purseWen,
+            int? hireWageWen = null)
         {
             NpcId = npcId;
             BaseAffinity = baseAffinity;
@@ -54,6 +58,7 @@ namespace Lingyan.Core.Social
             Alertness = alertness;
             Prowess = prowess;
             PurseWen = purseWen;
+            HireWageWen = hireWageWen;
         }
     }
 
@@ -63,10 +68,11 @@ namespace Lingyan.Core.Social
         public static readonly IReadOnlyDictionary<string, NpcProfile> All =
             new Dictionary<string, NpcProfile>
             {
+                // 脚夫受雇为佣保：月钱 500 文（唐佣作月钱数百文量级）
                 ["kang_san"] = new NpcProfile(
                     "kang_san", baseAffinity: 50, Personality.Shrewd,
                     new[] { GiftTaste.Exotic, GiftTaste.WineFood },
-                    alertness: 55, prowess: 35, purseWen: 60),
+                    alertness: 55, prowess: 35, purseWen: 60, hireWageWen: 500),
 
                 ["zheng_wu"] = new NpcProfile(
                     "zheng_wu", baseAffinity: 35, Personality.Proud,

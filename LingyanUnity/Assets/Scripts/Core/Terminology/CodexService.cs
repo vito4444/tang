@@ -53,6 +53,8 @@ namespace Lingyan.Core.Terminology
                         "zhilingchuang", "wutoumen");
                 case CodexEvent.VisitMarket:
                     return Unlock(save, "shi_market", "guan_currency", "wen_currency");
+                case CodexEvent.Hired:
+                    return Unlock(save, "yongbao");
                 default:
                     return new List<string>();
             }
@@ -77,6 +79,7 @@ namespace Lingyan.Core.Terminology
         SalaryDrawn = 4,
         Sparred = 5,
         SawArchitecture = 6,
-        VisitMarket = 7
+        VisitMarket = 7,
+        Hired = 8
     }
 }

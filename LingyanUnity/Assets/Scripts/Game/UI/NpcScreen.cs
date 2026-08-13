@@ -206,7 +206,33 @@ namespace Lingyan.Game.UI
                         data.Profile, s, save.Attributes.Wisdom, witnesses, Rng, date);
                 }));
             Btn(c, panel, xs[2], rowY2, "interact.propose", null, false);
-            Btn(c, panel, xs[3], rowY2, "interact.hire", null, false);
+
+            // 雇佣：可雇者活钮（已是长随→显「长随」灰钮），不可雇者灰
+            bool hired = RetainerService.IsHired(save, npcId);
+            if (hired)
+            {
+                UiKit.TextButton(UiKit.At(panel, "Act_interact.hire", xs[3], rowY2, 210, 50),
+                    "Btn", c.L10n.Tr("npc.retainer_badge"), null, 1.0f, false);
+            }
+            else if (data.Profile.HireWageWen != null)
+            {
+                Btn(c, panel, xs[3], rowY2, "interact.hire",
+                    () => Run(c, save, npcId, s =>
+                    {
+                        InteractionResult result = RetainerService.Hire(
+                            save, data.Profile, s, data.Total, date);
+                        if (result.Success)
+                        {
+                            Lingyan.Core.Terminology.CodexService.OnEvent(
+                                save, Lingyan.Core.Terminology.CodexEvent.Hired);
+                        }
+                        return result;
+                    }));
+            }
+            else
+            {
+                Btn(c, panel, xs[3], rowY2, "interact.hire", null, false);
+            }
         }
 
         private static void Btn(
@@ -256,7 +282,8 @@ namespace Lingyan.Game.UI
             string aboutId = SampleWard.Npcs
                 .First(n => n.NpcId != npcId).NpcId;
             InteractionResult result = InteractionService.AskAround(
-                data.Total, aboutId, save.Date.HourIndex, Rng);
+                data.Total, aboutId, save.Date.HourIndex, Rng,
+                hasRetainer: RetainerService.HiredRetainerId(save) != null);
             string text;
             if (result.Success)
             {

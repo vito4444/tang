@@ -217,11 +217,13 @@ namespace Lingyan.Core.Social
 
         // ---- 打听 ----
         // 好感 ≥30 才肯细说：给出指定目标此刻去向 + 一条传闻；不足则敷衍。
+        // 雇有长随（hasRetainer）则免情面——长随替你跑腿，消息必到。
         public static InteractionResult AskAround(
-            int affinityTotal, string aboutNpcId, int hourIndex, IRng rng)
+            int affinityTotal, string aboutNpcId, int hourIndex, IRng rng,
+            bool hasRetainer = false)
         {
             var result = new InteractionResult();
-            if (affinityTotal < 30)
+            if (affinityTotal < 30 && !hasRetainer)
             {
                 result.Success = false;
                 result.TextKey = "interact.result.ask_brushoff";

@@ -317,6 +317,21 @@ namespace Lingyan.Game.UI
                 F((long)System.Math.Round(pay.RiceShi
                     * Lingyan.Core.Economy.SalaryTable.RicePricePerShi)),
                 F(pay.FieldRentWen), F(pay.TotalWen));
+
+            // 佣钱随俸结算：付得起扣钱，付不起长随当场辞工掉好感
+            var payDate = new TangDate(save.Date.EraId, save.Date.EraYear,
+                save.Date.Month, save.Date.Day, save.Date.HourIndex);
+            bool paid = Lingyan.Core.Social.RetainerService.SettleMonthlyWage(
+                save, payDate, out string retainerId);
+            if (retainerId != null)
+            {
+                string retainerName = c.L10n.Tr(Lingyan.Core.World.SampleWard.Npcs
+                    .First(n => n.NpcId == retainerId).NameKey);
+                int wage = Lingyan.Core.Social.NpcProfiles.Get(retainerId).HireWageWen.Value;
+                _noticeText += "\n" + (paid
+                    ? c.L10n.TrF("career.salary_wage", F(wage), retainerName)
+                    : c.L10n.TrF("career.salary_wage_broke", retainerName));
+            }
             c.GoStudy(save);
         }
 

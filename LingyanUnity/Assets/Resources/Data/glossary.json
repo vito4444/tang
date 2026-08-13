@@ -84,6 +84,7 @@
   { "id": "xiaojin", "zh": "宵禁", "en": "night curfew", "category": "system", "verified": false, "note": "暮鼓后闭坊门，晓鼓后启" },
   { "id": "fang", "zh": "坊", "en": "walled ward", "category": "system", "verified": false, "note": "城市的基本单元，坊墙坊门按时启闭" },
   { "id": "shi_market", "zh": "市", "en": "official market", "category": "system", "verified": false, "note": "东西两市，午时击鼓开市" },
+  { "id": "yongbao", "zh": "佣保", "en": "hired hand", "category": "system", "verified": false, "note": "唐人雇佣文书习语：受雇随行、佣作杂役之人，计月给钱" },
   { "id": "wuhou", "zh": "武侯", "en": "street patrol (wuhou)", "category": "system", "verified": false, "note": "武侯铺巡查，犯夜者拿" },
   { "id": "fanye", "zh": "犯夜", "en": "curfew violation", "category": "system", "verified": false, "note": "《唐律》笞二十" },
   { "id": "nazi", "zh": "纳资", "en": "office access by contribution", "category": "system", "verified": false, "note": "胡商线入仕途径之一" },
