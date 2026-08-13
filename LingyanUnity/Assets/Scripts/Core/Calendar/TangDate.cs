@@ -62,6 +62,15 @@ namespace Lingyan.Core.Calendar
             AdvanceDays(total / 12);
         }
 
+        /// <summary>
+        /// 距下一个目标时辰还差几个时辰（1–12）：恰在目标时辰时返回 12（整候一日）。
+        /// 供"歇至明日卯时"之类的推进用。
+        /// </summary>
+        public static int HoursUntilNext(int currentHourIndex, int targetHourIndex)
+        {
+            return (targetHourIndex - currentHourIndex + 11) % 12 + 1;
+        }
+
         public void AdvanceDays(int days)
         {
             if (days < 0) { throw new ArgumentOutOfRangeException(nameof(days)); }

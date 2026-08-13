@@ -123,16 +123,20 @@ namespace Lingyan.Game.UI
                 en ? date.SolarTerm.En : date.SolarTerm.Zh);
 
             // 底部动作
-            UiKit.TextButton(UiKit.At(root, "BtnSave", 0.30f, 0.075f, 480, 56),
+            UiKit.TextButton(UiKit.At(root, "BtnSave", 0.22f, 0.075f, 460, 56),
                 "Btn", c.L10n.Tr("study.save_and_menu"),
                 () =>
                 {
                     c.Saves.Write(save);
                     c.GoMainMenu();
-                }, 1.15f);
+                }, 1.1f);
 
-            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.70f, 0.075f, 560, 56),
-                "Btn", c.L10n.Tr("study.chapter_locked"), null, 1.15f, false);
+            UiKit.TextButton(UiKit.At(root, "BtnWard", 0.50f, 0.075f, 320, 56),
+                "Btn", c.L10n.Tr("study.go_out"),
+                () => c.GoWard(save), 1.15f);
+
+            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.78f, 0.075f, 540, 56),
+                "Btn", c.L10n.Tr("study.chapter_locked"), null, 1.1f, false);
 
             UiKit.TextButton(UiKit.At(root, "BtnSettings", 0.94f, 0.94f, 180, 48),
                 "Btn", c.L10n.Tr("menu.settings"), c.GoSettings, 1.0f);

@@ -27,7 +27,7 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings }
+        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
@@ -126,6 +126,13 @@ namespace Lingyan.Game
             Rebuild();
         }
 
+        public void GoWard(SaveData save)
+        {
+            ActiveSave = save;
+            _screen = ScreenId.Ward;
+            Rebuild();
+        }
+
         public void GoSettings()
         {
             if (_screen != ScreenId.Settings)
@@ -192,6 +199,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Settings:
                     SettingsScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Ward:
+                    WardScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

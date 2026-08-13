@@ -487,6 +487,48 @@ def render_study(locale="zh"):
     return img
 
 
+def render_ward(locale="zh"):
+    """槐里坊：时辰、坊门状态、NPC 作息实况（数据与游戏同源，此处静态取巳时）。"""
+    img, draw = new_canvas()
+    text(draw, (W / 2, H * 0.06), tr("ward.huaili", locale), 46, "paper",
+         anchor="mm", spacing_px=12)
+    hairline(draw, W / 2 - 240, W / 2 + 240, H * 0.06 + 40, alpha=60)
+
+    date_line = ("垂拱四年 三月十七 · 巳时 · 谷雨" if locale == "zh"
+                 else "Chuigong 4 · Month 3, Day 17 · Hour of Si (9–11 a.m.) · Grain Rain")
+    text(draw, (W / 2, H * 0.145), date_line, 27, "faint", anchor="mm")
+
+    text(draw, (W / 2, H * 0.20), tr("ward.gates_open", locale), 26, "good",
+         anchor="mm")
+
+    x0, y0, x1, y1 = W * 0.18, H * 0.26, W * 0.82, H * 0.70
+    panel(draw, (x0, y0, x1, y1))
+    text(draw, ((x0 + x1) / 2, y0 + 62), tr("ward.now", locale), 30, "seal",
+         anchor="mm")
+    hairline(draw, (x0 + x1) / 2 - 210, (x0 + x1) / 2 + 210, y0 + 92, alpha=44)
+
+    # 巳时（index 5）实况——与 SampleWard 作息表一致
+    npcs = [
+        ("npc.kang_san", "place.west_market", "activity.selling"),
+        ("npc.zheng_wu", "place.wuhou_post", "activity.on_duty"),
+        ("npc.huan_fuzi", "place.home_huan", "activity.teaching"),
+    ]
+    yy = y0 + 158
+    for name_key, place_key, act_key in npcs:
+        if locale == "zh":
+            line = f"{tr(name_key, locale)}　在{tr(place_key, locale)} · {tr(act_key, locale)}"
+        else:
+            line = f"{tr(name_key, locale)} — at {tr(place_key, locale)}, {tr(act_key, locale)}"
+        text(draw, (x0 + 70, yy), line, 26, "paper", anchor="lm")
+        yy += 78
+
+    button(draw, W * 0.32, H * 0.78, tr("ward.wait_hour", locale), 29)
+    button(draw, W * 0.68, H * 0.78, tr("ward.rest_morning", locale), 29, "hover",
+           brackets=True)
+    button(draw, W / 2, H * 0.89, tr("ward.back_study", locale), 28)
+    return img
+
+
 def render_settings(locale="zh"):
     img, draw = new_canvas()
     text(draw, (W / 2, H * 0.10), tr("settings.title", locale), 46, "paper",
@@ -549,6 +591,7 @@ def main():
         ("menu_en.png", lambda: render_menu("en")),
         ("creation_zh.png", lambda: render_creation("zh")),
         ("study_zh.png", lambda: render_study("zh")),
+        ("ward_zh.png", lambda: render_ward("zh")),
         ("settings_zh.png", lambda: render_settings("zh")),
     ]
     all_metrics = {}

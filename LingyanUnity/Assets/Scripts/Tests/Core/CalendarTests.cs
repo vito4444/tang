@@ -82,6 +82,19 @@ namespace Lingyan.Core.Tests
         }
 
         [Test]
+        public void HoursUntilNext_RestUntilMao()
+        {
+            // 卯 = 3。戌时(10)歇下 → 5 个时辰到明日卯
+            Assert.That(TangDate.HoursUntilNext(10, 3), Is.EqualTo(5));
+            // 寅时(2) → 1 个时辰即卯
+            Assert.That(TangDate.HoursUntilNext(2, 3), Is.EqualTo(1));
+            // 恰在卯时 → 整候一日 12
+            Assert.That(TangDate.HoursUntilNext(3, 3), Is.EqualTo(12));
+            // 辰时(4) → 11
+            Assert.That(TangDate.HoursUntilNext(4, 3), Is.EqualTo(11));
+        }
+
+        [Test]
         public void Stamp_RoundTrips()
         {
             var date = new TangDate("tianshou", 2, 7, 21, 9);
