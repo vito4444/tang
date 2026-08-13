@@ -18,6 +18,17 @@ namespace Lingyan.Game.UI
     {
         private static string _noticeText;
 
+        /// <summary>
+        /// 会话级复位：匦面板模式与公文栏是静态的，换档不清会串档
+        /// （第十六轮实测：18 拍完不退匦，武商新档书房被匦面板盖屏）。
+        /// GameController.GoMainMenu 统一调用——所有换档路径都过主菜单。
+        /// </summary>
+        public static void ResetSession()
+        {
+            _tongguiMode = false;
+            _noticeText = null;
+        }
+
         public static void Build(GameController c, RectTransform root)
         {
             UiKit.InkBackground(root);

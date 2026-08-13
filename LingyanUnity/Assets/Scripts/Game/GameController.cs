@@ -152,6 +152,7 @@ namespace Lingyan.Game
         public void GoMainMenu()
         {
             _screen = ScreenId.MainMenu;
+            StudyScreen.ResetSession(); // 书房静态模式/公文栏跨档残留，回主菜单一律复位
             Rebuild();
         }
 
