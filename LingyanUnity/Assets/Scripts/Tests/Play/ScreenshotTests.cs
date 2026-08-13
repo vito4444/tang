@@ -128,10 +128,16 @@ namespace Lingyan.PlayTests
             Lingyan.Game.UI.DuelScreen.Cleanup(c);
 
             // 典籍（营造类：进坊后鸱尾等已解锁，详情展示复核台账）
+            // 注释的取景意图靠真点按钮兑现：Reset 默认落在职官类首页，
+            // 该页 9 条全锁，拍不到「解锁词条 + 详情」两种样式（第十一轮发现的编排脱节）。
             Lingyan.Core.Terminology.CodexService.OnEvent(
                 save, Lingyan.Core.Terminology.CodexEvent.Appointed);
             Lingyan.Game.UI.CodexScreen.Reset();
             c.GoCodex();
+            yield return null;
+            ClickButton("Cat_architecture");
+            yield return null;
+            ClickButton("E_chiwei");
             yield return null;
             yield return Snap(c, "13_codex");
 
@@ -143,6 +149,16 @@ namespace Lingyan.PlayTests
             c.GoMarriage();
             yield return null;
             yield return Snap(c, "14_marriage");
+        }
+
+        /// <summary>按节点名点 UI 按钮（走 onClick，顺带验证按钮真挂了监听）。</summary>
+        private static void ClickButton(string nodeName)
+        {
+            GameObject node = GameObject.Find(nodeName);
+            Assert.That(node, Is.Not.Null, "按钮节点未找到: " + nodeName);
+            var button = node.GetComponentInChildren<UnityEngine.UI.Button>();
+            Assert.That(button, Is.Not.Null, "节点无 Button: " + nodeName);
+            button.onClick.Invoke();
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)
