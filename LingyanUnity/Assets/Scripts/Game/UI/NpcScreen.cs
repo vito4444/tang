@@ -31,6 +31,12 @@ namespace Lingyan.Game.UI
             _ledgerPage = 0;
         }
 
+        /// <summary>供对决等外部流程回填结果行。</summary>
+        public static void SetResult(string text)
+        {
+            _lastResultText = text;
+        }
+
         public static void Build(GameController c, RectTransform root, string npcId)
         {
             SaveData save = c.ActiveSave;
@@ -175,9 +181,18 @@ namespace Lingyan.Game.UI
             Btn(c, panel, xs[2], rowY1, "interact.ask",
                 () => RunAsk(c, save, npcId, data));
             Btn(c, panel, xs[3], rowY1, "interact.spar",
-                () => Run(c, save, npcId, s => InteractionService.Spar(
-                    data.Profile, s, save.Attributes.Strength, save.Attributes.Stamina,
-                    Rng, date)));
+                () =>
+                {
+                    // 应战者进实时对决（阶段 7 内核）；不应战者拿婉拒文本
+                    if (data.Profile.Prowess != null)
+                    {
+                        DuelScreen.Start(c, npcId);
+                        return;
+                    }
+                    Run(c, save, npcId, s => InteractionService.Spar(
+                        data.Profile, s, save.Attributes.Strength, save.Attributes.Stamina,
+                        Rng, date));
+                });
 
             Btn(c, panel, xs[0], rowY2, "interact.insult",
                 () => Run(c, save, npcId, s => InteractionService.Insult(data.Profile, s, date)));

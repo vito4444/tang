@@ -28,7 +28,7 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case }
+        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
@@ -182,6 +182,13 @@ namespace Lingyan.Game
             Rebuild();
         }
 
+        /// <summary>切磋对决（DuelScreen 持有对决状态）。</summary>
+        public void GoDuel()
+        {
+            _screen = ScreenId.Duel;
+            Rebuild();
+        }
+
         public void GoSettings()
         {
             if (_screen != ScreenId.Settings)
@@ -239,9 +246,10 @@ namespace Lingyan.Game
             }
 
             SetWard3DVisible(_screen == ScreenId.Ward || _screen == ScreenId.Npc
-                || _screen == ScreenId.Dialogue);
-            // NPC/对话屏叠在坊景上但不接管轨道相机
-            if (_screen == ScreenId.Npc || _screen == ScreenId.Dialogue)
+                || _screen == ScreenId.Dialogue || _screen == ScreenId.Duel);
+            // NPC/对话/对决屏叠在坊景上但不接管轨道相机
+            if (_screen == ScreenId.Npc || _screen == ScreenId.Dialogue
+                || _screen == ScreenId.Duel)
             {
                 Orbit.enabled = false;
             }
@@ -268,6 +276,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Case:
                     CaseScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Duel:
+                    DuelScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

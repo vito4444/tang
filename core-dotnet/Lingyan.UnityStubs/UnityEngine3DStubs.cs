@@ -92,6 +92,7 @@ namespace UnityEngine
     public enum KeyCode
     {
         None = 0, W = 119, A = 97, S = 115, D = 100, Q = 113, E = 101,
+        J = 106, K = 107, Space = 32, LeftShift = 304,
         UpArrow = 273, DownArrow = 274, RightArrow = 275, LeftArrow = 276
     }
 
