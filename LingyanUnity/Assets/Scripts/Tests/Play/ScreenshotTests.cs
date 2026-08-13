@@ -221,6 +221,10 @@ namespace Lingyan.PlayTests
             ClickButton("BtnTongGui");
             yield return null;
             yield return Snap(c, "18_tonggui");
+            // 退出四匦模式：_tongguiMode 是跨档静态残留，不点返回则
+            // 19/20 两个新档书房右缘列仍渲匦面板，盖掉防秋/商队动作列（第十六轮虫）。
+            ClickButton("GuiBack");
+            yield return null;
 
             // 军线书房（戍卒任队正·秋七月：防秋点兵在列，勋轨待积转）
             CharacterDraft milDraft = CharacterCreationRules.NewDraft(ProtagonistId.ShuZu);
