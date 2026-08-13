@@ -126,6 +126,14 @@ namespace Lingyan.PlayTests
             yield return null;
             yield return Snap(c, "12_duel");
             Lingyan.Game.UI.DuelScreen.Cleanup(c);
+
+            // 典籍（营造类：进坊后鸱尾等已解锁，详情展示复核台账）
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.Appointed);
+            Lingyan.Game.UI.CodexScreen.Reset();
+            c.GoCodex();
+            yield return null;
+            yield return Snap(c, "13_codex");
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)
