@@ -108,9 +108,9 @@ namespace Lingyan.Game.UI
                     ? c.L10n.Tr("study.none")
                     : OfficeLabel(c, jue.Zh, jue.Grade, en));
 
-            // 服色（符号 + 颜色 + 文字三重编码）
+            // 服色（符号 + 颜色 + 文字三重编码）：随散官品；宫官无散官，随职事品（舆服"八品九品服青"）
             ry -= 0.11f;
-            RobeColor robe = RobeColors.FromGrade(sanguan?.Grade);
+            RobeColor robe = RobeColors.FromGrade(sanguan?.Grade ?? zhishi?.Grade);
             UiKit.Text(UiKit.At(right, "RobeLabel", 0.22f, ry, 300, 46),
                 "T", c.L10n.Tr("study.robe"), 1.05f,
                 InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
@@ -243,25 +243,37 @@ namespace Lingyan.Game.UI
         {
             var now = new TangDate(save.Date.EraId, save.Date.EraYear,
                 save.Date.Month, save.Date.Day, save.Date.HourIndex);
-            save.Counters.TryGetValue("cases_closed", out int casesClosed);
 
-            // 铨选授官：结过案且尚无官身（明镜的"流外入流"时刻）
-            if (save.Offices.ZhiShiId == null && casesClosed >= 1)
+            // 入仕分化（其余主角线开局）：五线各有门槛与去处，按钮常亮、未达门槛点开见驳文
+            if (save.Offices.ZhiShiId == null && save.Offices.SanGuanId == null)
             {
+                EntryOffer offer = CareerEntryService.Evaluate(save);
                 UiKit.TextButton(UiKit.At(root, "BtnAppoint", 0.94f, 0.875f, 220, 50),
-                    "Btn", c.L10n.Tr("career.appoint"),
+                    "Btn", c.L10n.Tr(offer.ActionKey),
                     () =>
                     {
-                        OfficeDef first = OfficialLadders.Civil[0];
-                        save.Offices.ZhiShiId = first.Id;
-                        SanGuanDef sanguan = SanGuanTable.InitialFor(first.Grade.Value, civil: true);
-                        save.Offices.SanGuanId = sanguan.Id;
+                        if (!CareerEntryService.Apply(save, offer))
+                        {
+                            _noticeText = c.L10n.Tr(offer.GateKey);
+                            c.GoStudy(save);
+                            return;
+                        }
                         Lingyan.Core.Terminology.CodexService.OnEvent(
                             save, Lingyan.Core.Terminology.CodexEvent.Appointed);
                         bool en2 = c.L10n.Locale == Locale.En;
-                        _noticeText = c.L10n.TrF("career.appointed",
-                            en2 ? c.L10n.OfficeEn(first.Zh) : first.Zh,
-                            en2 ? sanguan.Pinyin : sanguan.Zh);
+                        string text = c.L10n.Tr(offer.NoticeKey);
+                        OfficeDef granted = OfficialLadders.Get(offer.ZhiShiOfficeId);
+                        if (granted != null)
+                        {
+                            SanGuanDef given = SanGuanTable.Get(offer.SanGuanId);
+                            string sanguanText = given == null
+                                ? c.L10n.Tr("career.sanguan_none")
+                                : (en2 ? given.Pinyin : given.Zh);
+                            text += "\n" + c.L10n.TrF("career.appointed",
+                                en2 ? c.L10n.OfficeEn(granted.Zh) : granted.Zh,
+                                sanguanText);
+                        }
+                        _noticeText = text;
                         c.AutoSave();
                         c.GoStudy(save);
                     }, 1.0f);
@@ -371,10 +383,13 @@ namespace Lingyan.Game.UI
             if (decision.Eligible && decision.NextOffice != null)
             {
                 save.Offices.ZhiShiId = decision.NextOffice.Id;
-                if (decision.NextOffice.Grade != null)
+                // 散官随迁：文线文散、军线武散；宫官品阶自成体系，不带散官
+                if (decision.NextOffice.Grade != null
+                    && decision.NextOffice.Line != CareerLine.Palace)
                 {
                     SanGuanDef sanguan = SanGuanTable.InitialFor(
-                        decision.NextOffice.Grade.Value, civil: true);
+                        decision.NextOffice.Grade.Value,
+                        civil: decision.NextOffice.Line != CareerLine.Military);
                     save.Offices.SanGuanId = sanguan.Id;
                 }
                 text += "　" + c.L10n.TrF("career.promoted",

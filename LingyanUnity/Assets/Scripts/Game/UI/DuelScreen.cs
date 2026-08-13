@@ -124,6 +124,9 @@ namespace Lingyan.Game.UI
                 OutcomeApplier.ApplyReputation(
                     save, ReputationTrack.JiangHu, +4, "rep.src.spar_win", date);
                 state.Add(+1, "affinity.src.spar", date.ToStamp());
+                // 军线入仕看武名：切磋胜场入档（CareerEntryService 叙迁门槛）
+                save.Counters.TryGetValue("spar_wins", out int wins);
+                save.Counters["spar_wins"] = wins + 1;
             }
             else
             {

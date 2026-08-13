@@ -41,8 +41,20 @@ namespace Lingyan.Core.Officials
             new OfficeDef("piaoqi_dajiangjun", "骠骑大将军", "piaoqi_dajiangjun", RankGrade.Cong(1), OfficeTrack.SanGuan, CareerLine.Military, 9)
         };
 
+        /// <summary>
+        /// 内廷·宫官线（尚宫局，《唐六典》卷十二）。宫官品阶自成体系、不带散官；
+        /// 女官主角（武周段）自掖庭起家。宫官不分上下阶。
+        /// </summary>
+        public static readonly IReadOnlyList<OfficeDef> Palace = new[]
+        {
+            new OfficeDef("zhang_ji", "掌记", "zhang_ji", RankGrade.Zheng(8), OfficeTrack.ZhiShi, CareerLine.Palace, 0),
+            new OfficeDef("dian_ji", "典记", "dian_ji", RankGrade.Zheng(7), OfficeTrack.ZhiShi, CareerLine.Palace, 1),
+            new OfficeDef("si_ji", "司记", "si_ji", RankGrade.Zheng(6), OfficeTrack.ZhiShi, CareerLine.Palace, 2),
+            new OfficeDef("shang_gong", "尚宫", "shang_gong", RankGrade.Zheng(5), OfficeTrack.ZhiShi, CareerLine.Palace, 3)
+        };
+
         private static readonly Dictionary<string, OfficeDef> ById =
-            Civil.Concat(Military).ToDictionary(o => o.Id);
+            Civil.Concat(Military).Concat(Palace).ToDictionary(o => o.Id);
 
         public static OfficeDef Get(string id)
         {
@@ -56,8 +68,13 @@ namespace Lingyan.Core.Officials
         public static OfficeDef NextOf(OfficeDef current)
         {
             if (current == null) { return null; }
-            IReadOnlyList<OfficeDef> ladder =
-                current.Line == CareerLine.Military ? Military : Civil;
+            IReadOnlyList<OfficeDef> ladder;
+            switch (current.Line)
+            {
+                case CareerLine.Military: ladder = Military; break;
+                case CareerLine.Palace: ladder = Palace; break;
+                default: ladder = Civil; break;
+            }
             int next = current.LadderIndex + 1;
             return next >= 0 && next < ladder.Count ? ladder[next] : null;
         }
