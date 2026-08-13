@@ -70,7 +70,12 @@ namespace Lingyan.Core.Saves
                 NpcStates = new Dictionary<string, SaveNpcState>(),
                 Cases = new Dictionary<string, SaveCaseState>(),
                 KaoKeGrades = new List<int>(),
-                HousingId = "hut"
+                HousingId = "hut",
+                CodexUnlocked = new List<string>
+                {
+                    // 开卷即识的常识词条
+                    "fang", "xiaojin", "guan_currency", "wen_currency"
+                }
             };
         }
     }

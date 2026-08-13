@@ -28,7 +28,10 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel }
+        private enum ScreenId
+        {
+            MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel, Codex
+        }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
@@ -158,6 +161,11 @@ namespace Lingyan.Game
         {
             ActiveSave = save;
             _screen = ScreenId.Ward;
+            // 进坊即长见识：市井制度与眼前的唐构入典籍
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.EnterWard);
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.SawArchitecture);
             Rebuild();
         }
 
@@ -187,6 +195,13 @@ namespace Lingyan.Game
         public void GoDuel()
         {
             _screen = ScreenId.Duel;
+            Rebuild();
+        }
+
+        /// <summary>典籍（Codex 百科）。</summary>
+        public void GoCodex()
+        {
+            _screen = ScreenId.Codex;
             Rebuild();
         }
 
@@ -289,6 +304,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Duel:
                     DuelScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Codex:
+                    CodexScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

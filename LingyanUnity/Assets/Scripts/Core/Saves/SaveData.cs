@@ -74,6 +74,10 @@ namespace Lingyan.Core.Saves
         /// <summary>现居宅邸（v3 起；按官品解锁，见 HousingTable）。</summary>
         [JsonProperty("housing", Required = Required.Always)]
         public string HousingId { get; set; } = "hut";
+
+        /// <summary>已解锁的 Codex 词条 id（v3 起；遇术语自动解锁，规格第十一节）。</summary>
+        [JsonProperty("codex", Required = Required.Always)]
+        public List<string> CodexUnlocked { get; set; } = new List<string>();
     }
 
     public sealed class SaveCaseState

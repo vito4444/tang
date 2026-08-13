@@ -168,13 +168,21 @@ namespace Lingyan.Game.UI
                             save.Date.Month, save.Date.Day, save.Date.HourIndex);
                         Lingyan.Core.Cases.CaseService.Open(
                             save, Lingyan.Core.Cases.SilkCase.Def, now);
+                        Lingyan.Core.Terminology.CodexService.OnEvent(
+                            save, Lingyan.Core.Terminology.CodexEvent.CaseOpened);
+                        Lingyan.Core.Terminology.CodexService.OnEvent(
+                            save, Lingyan.Core.Terminology.CodexEvent.HeardSilkCase);
                     }
                     CaseScreen.Reset();
                     c.GoCase();
                 }, 1.1f, caseOpen || heardCase);
 
-            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.875f, 0.075f, 380, 56),
-                "Btn", c.L10n.Tr("study.chapter_locked"), null, 1.0f, false);
+            UiKit.TextButton(UiKit.At(root, "BtnCodex", 0.845f, 0.075f, 200, 56),
+                "Btn", c.L10n.Tr("study.codex"),
+                () => { CodexScreen.Reset(); c.GoCodex(); }, 1.05f);
+
+            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.955f, 0.075f, 200, 56),
+                "Btn", c.L10n.Tr("study.chapter_locked_short"), null, 1.0f, false);
 
             UiKit.TextButton(UiKit.At(root, "BtnSettings", 0.94f, 0.94f, 180, 48),
                 "Btn", c.L10n.Tr("menu.settings"), c.GoSettings, 1.0f);
@@ -245,10 +253,13 @@ namespace Lingyan.Game.UI
                         save.Offices.ZhiShiId = first.Id;
                         SanGuanDef sanguan = SanGuanTable.InitialFor(first.Grade.Value, civil: true);
                         save.Offices.SanGuanId = sanguan.Id;
+                        Lingyan.Core.Terminology.CodexService.OnEvent(
+                            save, Lingyan.Core.Terminology.CodexEvent.Appointed);
                         bool en2 = c.L10n.Locale == Locale.En;
                         _noticeText = c.L10n.TrF("career.appointed",
                             en2 ? c.L10n.OfficeEn(first.Zh) : first.Zh,
                             en2 ? sanguan.Pinyin : sanguan.Zh);
+                        c.AutoSave();
                         c.GoStudy(save);
                     }, 1.0f);
                 return;
@@ -287,6 +298,8 @@ namespace Lingyan.Game.UI
                 Lingyan.Core.Economy.SalaryTable.For(office.Grade.Value);
             Lingyan.Core.Social.OutcomeApplier.ApplyMoney(save, pay.TotalWen);
             save.Counters["last_salary_ym"] = yearMonth;
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.SalaryDrawn);
 
             bool en = c.L10n.Locale == Locale.En;
             string F(long wen)

@@ -22,6 +22,10 @@ namespace Lingyan.Core.Saves.Migrations
             {
                 save["housing"] = "hut";
             }
+            if (save["codex"] == null)
+            {
+                save["codex"] = new JArray();
+            }
             return save;
         }
     }

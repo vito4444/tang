@@ -132,6 +132,8 @@ namespace Lingyan.Game.UI
                 state.Add(+4, "affinity.src.spar_respect", date.ToStamp());
             }
             NpcStateStore.Store(save, _npcId, state);
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.Sparred);
 
             Cleanup(c);
             NpcScreen.SetResult(c.L10n.Tr(win
