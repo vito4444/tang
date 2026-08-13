@@ -36,9 +36,9 @@ namespace Lingyan.Game.World3D
             bool gatesOpen = WardDef.GatesOpenAt(hourIndex);
             foreach (GameObject leaf in _gateLeaves)
             {
-                // 开门时门扇绕铰边转贴门墩内侧，闭门时合拢堵住门洞。
-                // 精模节点名 GateLeaf_L/R；程序化占位沿用同名约定。
-                float sign = leaf.name.Contains("_L") ? 1f : -1f;
+                // 开门时门扇绕铰边向坊内翻转贴墩，闭门时合拢堵住门洞。
+                // 精模节点名 GateLeaf_L/R；第五轮截图证实原符号朝外开，取反。
+                float sign = leaf.name.Contains("_L") ? -1f : 1f;
                 leaf.transform.localRotation =
                     Quaternion.Euler(0f, gatesOpen ? sign * 80f : 0f, 0f);
             }
