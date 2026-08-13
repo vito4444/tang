@@ -190,6 +190,9 @@ namespace Lingyan.Game.UI
             var go = new GameObject(name);
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(parent, false);
+            // 文字节点必须填满父容器：RectTransform 默认 100×100，
+            // 不拉伸的话所有中文都会在 100px 宽里逐字断行（首轮引擎截图的竖排事故）。
+            Stretch(rect);
             var text = go.AddComponent<TextMeshProUGUI>();
             _fonts?.Apply(text);
             text.text = content;
