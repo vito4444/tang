@@ -273,6 +273,11 @@
   "rep.src.case_wrong": { "zh": "结案存疑", "en": "A case dubiously closed" },
   "study.case_take": { "zh": "接下丝帛案", "en": "Take the Silk Case" },
   "study.case_board": { "zh": "案牍", "en": "Case Files" },
+  "career.appoint": { "zh": "铨选授官", "en": "Selection & Appointment" },
+  "career.appointed": { "zh": "吏部铨选：授{0}，起家散官{1}。自此脱下白衣。", "en": "By selection of the Ministry of Personnel: appointed {0}, with the prestige title {1}. The white robe comes off." },
+  "career.kaoke": { "zh": "岁末赴考", "en": "Year-end Evaluation" },
+  "career.kaoke_result": { "zh": "考第：{0}。", "en": "Evaluation grade: {0}." },
+  "career.promoted": { "zh": "迁{0}。", "en": "Promoted to {0}." },
 
   "boot.loading": { "zh": "启程……", "en": "Setting out…" },
   "common.confirm": { "zh": "确认", "en": "Confirm" },

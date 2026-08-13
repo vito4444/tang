@@ -99,6 +99,24 @@ namespace Lingyan.PlayTests
             c.GoDialogue();
             yield return null;
             yield return Snap(c, "10_dialogue");
+
+            // 线索板（接案 + 两条线索 + 一条推论）
+            save.StoryFlags["heard_silk_case"] = true;
+            var caseNow = new Lingyan.Core.Calendar.TangDate(
+                save.Date.EraId, save.Date.EraYear, save.Date.Month,
+                save.Date.Day, save.Date.HourIndex);
+            SaveCaseState caseState = Lingyan.Core.Cases.CaseService.Open(
+                save, Lingyan.Core.Cases.SilkCase.Def, caseNow);
+            Lingyan.Core.Cases.CaseService.Discover(
+                caseState, Lingyan.Core.Cases.SilkCase.Def, "permit");
+            Lingyan.Core.Cases.CaseService.Discover(
+                caseState, Lingyan.Core.Cases.SilkCase.Def, "patrol_log");
+            Lingyan.Core.Cases.CaseService.Combine(
+                caseState, Lingyan.Core.Cases.SilkCase.Def, "permit", "patrol_log");
+            Lingyan.Game.UI.CaseScreen.Reset();
+            c.GoCase();
+            yield return null;
+            yield return Snap(c, "11_case_board");
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)

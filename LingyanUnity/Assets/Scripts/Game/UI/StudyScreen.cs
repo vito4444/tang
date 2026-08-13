@@ -1,3 +1,4 @@
+using System.Linq;
 using Lingyan.Core.Calendar;
 using Lingyan.Core.Characters;
 using Lingyan.Core.Economy;
@@ -15,6 +16,8 @@ namespace Lingyan.Game.UI
     /// </summary>
     public static class StudyScreen
     {
+        private static string _noticeText;
+
         public static void Build(GameController c, RectTransform root)
         {
             UiKit.InkBackground(root);
@@ -36,6 +39,14 @@ namespace Lingyan.Game.UI
                 "T", save.CharacterName + " · " + c.L10n.Tr(def.TitleKey)
                     + " · " + c.L10n.Tr(def.StartStatusKey),
                 1.15f, InkPalette.Faint, TextAlignmentOptions.Center);
+
+            if (_noticeText != null)
+            {
+                UiKit.Text(UiKit.At(root, "Notice", 0.5f, 0.835f, 1500, 44),
+                    "T", _noticeText, 1.0f, InkPalette.Seal, TextAlignmentOptions.Center);
+            }
+
+            BuildCareerActions(c, root, save);
 
             // 左列：四维 + 名声
             RectTransform left = UiKit.Rect(root, "LeftPanel",
@@ -205,6 +216,91 @@ namespace Lingyan.Game.UI
             UiKit.Text(UiKit.At(panel, name + "_V", 0.36f, y, 80, 46),
                 "T", value.ToString(), 1.15f, InkPalette.PaperText, TextAlignmentOptions.Center);
             UiKit.Bar(panel, name + "_Bar", 0.66f, y, 300, value / 100f);
+        }
+
+        /// <summary>仕途动作：破案后铨选授官；任上岁末赴考，考成迁转（服色随散官变）。</summary>
+        private static void BuildCareerActions(GameController c, RectTransform root, SaveData save)
+        {
+            var now = new TangDate(save.Date.EraId, save.Date.EraYear,
+                save.Date.Month, save.Date.Day, save.Date.HourIndex);
+            save.Counters.TryGetValue("cases_closed", out int casesClosed);
+
+            // 铨选授官：结过案且尚无官身（明镜的"流外入流"时刻）
+            if (save.Offices.ZhiShiId == null && casesClosed >= 1)
+            {
+                UiKit.TextButton(UiKit.At(root, "BtnAppoint", 0.94f, 0.875f, 220, 50),
+                    "Btn", c.L10n.Tr("career.appoint"),
+                    () =>
+                    {
+                        OfficeDef first = OfficialLadders.Civil[0];
+                        save.Offices.ZhiShiId = first.Id;
+                        SanGuanDef sanguan = SanGuanTable.InitialFor(first.Grade.Value, civil: true);
+                        save.Offices.SanGuanId = sanguan.Id;
+                        bool en2 = c.L10n.Locale == Locale.En;
+                        _noticeText = c.L10n.TrF("career.appointed",
+                            en2 ? c.L10n.OfficeEn(first.Zh) : first.Zh,
+                            en2 ? sanguan.Pinyin : sanguan.Zh);
+                        c.GoStudy(save);
+                    }, 1.0f);
+                return;
+            }
+
+            // 岁末赴考：任上且当年未考
+            if (save.Offices.ZhiShiId != null)
+            {
+                int year = EraTable.ToGregorianYear(save.Date.EraId, save.Date.EraYear);
+                save.Counters.TryGetValue("last_kaoke_year", out int lastYear);
+                bool canExam = year > lastYear;
+                UiKit.TextButton(UiKit.At(root, "BtnKaoke", 0.94f, 0.875f, 220, 50),
+                    "Btn", c.L10n.Tr("career.kaoke"),
+                    () => RunKaoKe(c, save, now, year), 1.0f, canExam);
+            }
+        }
+
+        private static void RunKaoKe(GameController c, SaveData save, TangDate now, int year)
+        {
+            save.Counters.TryGetValue("merit_points", out int merit);
+            save.Counters.TryGetValue("cases_closed", out int closed);
+            save.Cases.TryGetValue(Lingyan.Core.Cases.SilkCase.CaseId, out SaveCaseState silk);
+            int opened = save.Cases.Count;
+            bool wrongful = silk != null && silk.WrongfulConviction;
+
+            var input = new KaoKeInput
+            {
+                MeritPoints = merit,
+                CompletionRatio = opened == 0 ? 0 : (double)closed / opened,
+                GuanSheng = save.Reputation.GuanSheng,
+                MinWang = save.Reputation.MinWang,
+                WrongfulConviction = wrongful
+            };
+            KaoKeResult result = KaoKeService.Evaluate(input);
+            save.KaoKeGrades.Add((int)result.Grade);
+            save.Counters["last_kaoke_year"] = year;
+            save.Counters["merit_points"] = 0; // 功绩计入本考，翻篇
+
+            var grades = save.KaoKeGrades.Select(g => (NineGrade)g).ToList();
+            OfficeDef current = OfficialLadders.Get(save.Offices.ZhiShiId);
+            PromotionDecision decision = PromotionService.Evaluate(grades, current);
+
+            bool en = c.L10n.Locale == Locale.En;
+            string text = c.L10n.TrF("career.kaoke_result",
+                en ? KaoKeService.GradeEn(result.Grade) : KaoKeService.GradeZh(result.Grade))
+                + "　" + c.L10n.Tr(decision.ReasonKey);
+
+            if (decision.Eligible && decision.NextOffice != null)
+            {
+                save.Offices.ZhiShiId = decision.NextOffice.Id;
+                if (decision.NextOffice.Grade != null)
+                {
+                    SanGuanDef sanguan = SanGuanTable.InitialFor(
+                        decision.NextOffice.Grade.Value, civil: true);
+                    save.Offices.SanGuanId = sanguan.Id;
+                }
+                text += "　" + c.L10n.TrF("career.promoted",
+                    en ? c.L10n.OfficeEn(decision.NextOffice.Zh) : decision.NextOffice.Zh);
+            }
+            _noticeText = text;
+            c.GoStudy(save);
         }
 
         private static string RobeKey(RobeColor robe)
