@@ -52,6 +52,94 @@ namespace Lingyan.Core.Tests
         }
 
         [Test]
+        public void AllTrees_ParseValidate_NpcMatchesFilename_HasProfile()
+        {
+            // 量产纪律：dialogues 目录下每棵树自动巡检，新树入库即被咬住
+            string dir = Path.Combine(TestData.DataDir, "dialogues");
+            string[] files = Directory.GetFiles(dir, "*.json");
+            Assert.That(files.Length, Is.GreaterThanOrEqualTo(3),
+                "至少桓夫子/康三/郑五三棵树");
+
+            var catalog = LocalizationCatalog.Parse(TestData.StringsJson());
+            var problems = new System.Collections.Generic.List<string>();
+            foreach (string file in files)
+            {
+                string expectNpc = Path.GetFileNameWithoutExtension(file);
+                DialogueTree tree = DialogueTree.Parse(File.ReadAllText(file));
+                if (tree.NpcId != expectNpc)
+                {
+                    problems.Add(file + ": npc=" + tree.NpcId + " 与文件名不符");
+                }
+                if (NpcProfiles.Get(tree.NpcId) == null)
+                {
+                    problems.Add(file + ": npc 无社交档案");
+                }
+                foreach (string violation in DialogueValidator.Check(tree, catalog))
+                {
+                    problems.Add(file + ": " + violation);
+                }
+            }
+            Assert.That(problems, Is.Empty, string.Join("\n", problems));
+        }
+
+        [Test]
+        public void KangTree_TeaMoney_GatesCaseClueTalk()
+        {
+            SaveData save = NewSave();
+            save.StoryFlags["heard_silk_case"] = true;
+            string json = File.ReadAllText(
+                Path.Combine(TestData.DataDir, "dialogues", "kang_san.json"));
+            var runner = new DialogueRunner(DialogueTree.Parse(json), save,
+                NpcProfiles.Get("kang_san"), NpcArchetype.Commoner);
+
+            var caseChoice = runner.AvailableChoices()
+                .FirstOrDefault(ch => ch.TextKey == "dlg.kang.c_case");
+            Assert.That(caseChoice, Is.Not.Null, "听过丝帛案才见此问");
+            runner.Choose(caseChoice, Date(save));
+
+            long before = save.MoneyWen;
+            var pay = runner.AvailableChoices()
+                .FirstOrDefault(ch => ch.TextKey == "dlg.kang.c_pay_tea");
+            Assert.That(pay, Is.Not.Null, "6000 文付得起 50 文茶钱");
+            runner.Choose(pay, Date(save));
+            Assert.That(save.MoneyWen, Is.EqualTo(before - 50), "茶钱落账");
+            Assert.That(save.StoryFlags["kang_told_case"], Is.True, "线索话头旗标入档");
+            Assert.That(runner.Current.TextKey, Is.EqualTo("dlg.kang.case_talk"));
+
+            // 再进树：已说过就不再有此问（FlagNotSet 咬住）
+            var again = new DialogueRunner(DialogueTree.Parse(json), save,
+                NpcProfiles.Get("kang_san"), NpcArchetype.Commoner);
+            Assert.That(again.AvailableChoices()
+                .Any(ch => ch.TextKey == "dlg.kang.c_case"), Is.False);
+        }
+
+        [Test]
+        public void ZhengTree_TauntCostsReputation_PatrolNeedsAffinity()
+        {
+            SaveData save = NewSave();
+            string json = File.ReadAllText(
+                Path.Combine(TestData.DataDir, "dialogues", "zheng_wu.json"));
+            var runner = new DialogueRunner(DialogueTree.Parse(json), save,
+                NpcProfiles.Get("zheng_wu"), NpcArchetype.Official);
+
+            // 郑五基准好感 35 < 45：巡夜话头不开
+            Assert.That(runner.AvailableChoices()
+                .Any(ch => ch.TextKey == "dlg.zheng.c_patrol"), Is.False,
+                "交情不到，武侯不吐口");
+
+            // 挑衅到底：好感 -8、官声 -1
+            var taunt = runner.AvailableChoices()
+                .First(ch => ch.TextKey == "dlg.zheng.c_taunt");
+            runner.Choose(taunt, Date(save));
+            int guanShengBefore = save.Reputation.GuanSheng;
+            var press = runner.AvailableChoices()
+                .First(ch => ch.TextKey == "dlg.zheng.c_taunt_press");
+            runner.Choose(press, Date(save));
+            Assert.That(save.Reputation.GuanSheng, Is.EqualTo(guanShengBefore - 1),
+                "顶撞武侯掉官声");
+        }
+
+        [Test]
         public void Validator_CatchesDanglingGoto_MutationCheck()
         {
             DialogueTree tree = DialogueTree.Parse(HuanJson());

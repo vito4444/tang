@@ -1,0 +1,86 @@
+{
+  "id": "dlg_zheng_wu",
+  "npc": "zheng_wu",
+  "entry": "greet",
+  "lines": [
+    {
+      "id": "greet",
+      "text": "dlg.zheng.greet",
+      "choices": [
+        { "text": "dlg.zheng.c_curfew", "goto": "curfew" },
+        {
+          "text": "dlg.zheng.c_snack",
+          "conditions": [ { "kind": "MinMoneyWen", "value": 15 } ],
+          "effects": [
+            { "kind": "MoneyWen", "value": -15 },
+            { "kind": "Affinity", "value": 2, "source": "affinity.src.treat" }
+          ],
+          "goto": "snack"
+        },
+        {
+          "text": "dlg.zheng.c_patrol",
+          "conditions": [
+            { "kind": "MinAffinity", "value": 45 },
+            { "kind": "FlagNotSet", "flag": "zheng_patrol_hint" }
+          ],
+          "effects": [
+            { "kind": "SetFlag", "flag": "zheng_patrol_hint" },
+            { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" }
+          ],
+          "goto": "patrol"
+        },
+        {
+          "text": "dlg.zheng.c_patrol_again",
+          "conditions": [ { "kind": "FlagSet", "flag": "zheng_patrol_hint" } ],
+          "goto": "patrol"
+        },
+        { "text": "dlg.zheng.c_taunt", "goto": "taunt" },
+        { "text": "dlg.zheng.c_leave", "goto": null }
+      ]
+    },
+    {
+      "id": "curfew",
+      "text": "dlg.zheng.curfew",
+      "choices": [
+        { "text": "dlg.zheng.c_noted", "goto": null },
+        { "text": "dlg.zheng.c_back", "goto": "greet" }
+      ]
+    },
+    {
+      "id": "snack",
+      "text": "dlg.zheng.snack",
+      "choices": [
+        { "text": "dlg.zheng.c_back", "goto": "greet" }
+      ]
+    },
+    {
+      "id": "patrol",
+      "text": "dlg.zheng.patrol",
+      "choices": [
+        { "text": "dlg.zheng.c_thanks", "goto": null }
+      ]
+    },
+    {
+      "id": "taunt",
+      "text": "dlg.zheng.taunt",
+      "choices": [
+        {
+          "text": "dlg.zheng.c_taunt_press",
+          "effects": [
+            { "kind": "Affinity", "value": -8, "source": "affinity.src.taunt" },
+            { "kind": "GuanSheng", "value": -1, "source": "rep.src.taunt_watchman" }
+          ],
+          "goto": "taunt_end"
+        },
+        { "text": "dlg.zheng.c_back_off", "goto": "greet" }
+      ]
+    },
+    {
+      "id": "taunt_end",
+      "text": "dlg.zheng.taunt_end",
+      "choices": [
+        { "text": "dlg.zheng.c_leave", "goto": null }
+      ]
+    }
+  ]
+}
