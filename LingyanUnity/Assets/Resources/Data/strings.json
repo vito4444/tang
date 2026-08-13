@@ -406,6 +406,7 @@
   "demotion.reason.wanted": { "zh": "案底累累，御史论劾。", "en": "Your record of offenses drew the censors' impeachment." },
   "demotion.reason.grades": { "zh": "连岁考殿，上官不容。", "en": "Bottom evaluations two years running—your superiors would not have it." },
   "career.demoted": { "zh": "贬为{0}，谪居炎荒。仕途未绝——翻身之路犹在。", "en": "Demoted to {0}, banished to the sweltering south. The road back remains—if you can walk it." },
+  "career.liangyi": { "zh": "岁课优异，遇赦量移：贬籍洗雪，仍复旧班。", "en": "Your year's rating shines and an amnesty moves you back from the far south—the record of demotion is washed clean." },
   "housing.hut": { "zh": "赁居小院", "en": "a rented yard" },
   "housing.courtyard": { "zh": "一进宅院", "en": "a single-court residence" },
   "housing.two_court": { "zh": "二进宅院", "en": "a two-court residence" },

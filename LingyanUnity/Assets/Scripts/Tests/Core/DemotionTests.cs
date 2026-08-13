@@ -74,5 +74,47 @@ namespace Lingyan.Core.Tests
             DemotionResult result = DemotionService.Apply(save, "demotion.reason.grades");
             Assert.That(result.NewOffice.Id, Is.EqualTo("xian_wei"), "保底最低阶不出界");
         }
+
+        [Test]
+        public void Apply_PalaceLine_StaysOnPalaceLadder()
+        {
+            SaveData save = OfficialSave("si_ji"); // 宫官线 index 2
+            save.Offices.SanGuanId = null;        // 宫官不带散官
+            DemotionResult result = DemotionService.Apply(save, "demotion.reason.wanted");
+            Assert.That(result.NewOffice.Id, Is.EqualTo("zhang_ji"),
+                "宫官贬宫官序（司记降两阶回掌记），不得跌进文官序");
+        }
+
+        [Test]
+        public void Redeem_MidUpperGrade_WashesFlag()
+        {
+            SaveData save = OfficialSave();
+            DemotionService.Apply(save, "demotion.reason.wanted");
+            Assert.That(save.StoryFlags["demoted_lingnan"], Is.True, "前置：已贬");
+
+            Assert.That(DemotionService.TryRedeem(save, NineGrade.ZhongZhong), Is.False,
+                "中中不够，量移须中上及以上");
+            Assert.That(save.StoryFlags["demoted_lingnan"], Is.True);
+
+            Assert.That(DemotionService.TryRedeem(save, NineGrade.ZhongShang), Is.True);
+            Assert.That(save.StoryFlags["demoted_lingnan"], Is.False, "贬籍洗雪");
+
+            Assert.That(DemotionService.TryRedeem(save, NineGrade.ShangShang), Is.False,
+                "未贬之身无籍可洗");
+        }
+
+        [Test]
+        public void Redeem_UnlocksNonLingnanEnding()
+        {
+            SaveData save = OfficialSave("xian_wei");
+            DemotionService.Apply(save, "demotion.reason.wanted");
+            Assert.That(Lingyan.Core.Endings.EndingService.Evaluate(save).Id,
+                Is.EqualTo(Lingyan.Core.Endings.EndingId.LingnanRain), "贬籍未雪锁岭南档");
+
+            DemotionService.TryRedeem(save, NineGrade.ShangXia);
+            Assert.That(Lingyan.Core.Endings.EndingService.Evaluate(save).Id,
+                Is.Not.EqualTo(Lingyan.Core.Endings.EndingId.LingnanRain),
+                "量移之后，结局照常论身份与名声");
+        }
     }
 }

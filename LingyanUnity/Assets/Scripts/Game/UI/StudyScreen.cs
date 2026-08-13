@@ -396,6 +396,12 @@ namespace Lingyan.Game.UI
                     en ? c.L10n.OfficeEn(decision.NextOffice.Zh) : decision.NextOffice.Zh);
             }
 
+            // 量移（翻身线）：贬谪之身岁课中上及以上，贬籍洗雪
+            if (DemotionService.TryRedeem(save, result.Grade))
+            {
+                text += "　" + c.L10n.Tr("career.liangyi");
+            }
+
             // 贬谪而非 Game Over：通缉滔天或考课连殿，贬官降阶、剧情继续
             string demotionReason = DemotionService.ShouldDemote(save);
             if (demotionReason != null)

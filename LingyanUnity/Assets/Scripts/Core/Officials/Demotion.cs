@@ -55,10 +55,13 @@ namespace Lingyan.Core.Officials
                 return result;
             }
 
-            IReadOnlyList<OfficeDef> ladder =
-                current.Line == CareerLine.Military
-                    ? OfficialLadders.Military
-                    : OfficialLadders.Civil;
+            IReadOnlyList<OfficeDef> ladder;
+            switch (current.Line)
+            {
+                case CareerLine.Military: ladder = OfficialLadders.Military; break;
+                case CareerLine.Palace: ladder = OfficialLadders.Palace; break;
+                default: ladder = OfficialLadders.Civil; break;
+            }
             int newIndex = current.LadderIndex - 2;
             if (newIndex < 0) { newIndex = 0; }
             OfficeDef demotedTo = ladder[newIndex];
@@ -76,6 +79,25 @@ namespace Lingyan.Core.Officials
             result.Demoted = true;
             result.NewOffice = demotedTo;
             return result;
+        }
+
+        /// <summary>
+        /// 量移（翻身线兑现）：贬谪之身岁课得中上及以上，遇赦量移，贬籍洗雪。
+        /// 唐制贬官遇赦"量移近处"，本作以考课优异为赦令触发的叙事口径。
+        /// 洗雪后结局不再锁「岭南瘴雨」档。返回是否本次洗雪。
+        /// </summary>
+        public static bool TryRedeem(SaveData save, NineGrade latestGrade)
+        {
+            if (!save.StoryFlags.TryGetValue("demoted_lingnan", out bool demoted) || !demoted)
+            {
+                return false;
+            }
+            if (latestGrade < NineGrade.ZhongShang)
+            {
+                return false;
+            }
+            save.StoryFlags["demoted_lingnan"] = false;
+            return true;
         }
     }
 }
