@@ -58,6 +58,11 @@ namespace Lingyan.Core.Saves
             ValidateReputation(data.Reputation.MinWang, "民望");
             ValidateReputation(data.Reputation.JiangHu, "江湖名望");
 
+            if (data.WantedLevel < 0)
+            {
+                throw new SaveCorruptException("通缉值为负: " + data.WantedLevel);
+            }
+
             if (EraTable.Get(data.Date.EraId) == null)
             {
                 throw new SaveCorruptException("未知年号: " + data.Date.EraId);

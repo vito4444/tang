@@ -28,11 +28,12 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward }
+        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
         private RectTransform _screenRoot;
+        private string _activeNpcId;
 
         /// <summary>主相机（UI 之外亦渲染坊景）。</summary>
         public Camera MainCamera { get; private set; }
@@ -45,6 +46,9 @@ namespace Lingyan.Game
 
         /// <summary>槐里坊三维场景（懒构建，跨屏缓存）。</summary>
         public WardScene Ward3D { get; private set; }
+
+        /// <summary>坊景 NPC 悬停浮签（仅坊景屏启用）。</summary>
+        public WardNpcHover NpcHover { get; private set; }
 
         private void Awake()
         {
@@ -109,6 +113,10 @@ namespace Lingyan.Game
             _screenRoot.anchorMax = Vector2.one;
             _screenRoot.offsetMin = Vector2.zero;
             _screenRoot.offsetMax = Vector2.zero;
+
+            NpcHover = gameObject.AddComponent<WardNpcHover>();
+            NpcHover.Bind(this, _screenRoot);
+            NpcHover.enabled = false;
         }
 
         private void SmokeLog()
@@ -149,6 +157,14 @@ namespace Lingyan.Game
         {
             ActiveSave = save;
             _screen = ScreenId.Ward;
+            Rebuild();
+        }
+
+        /// <summary>打开 NPC 互动屏（保留坊景为背景）。</summary>
+        public void GoNpc(string npcId)
+        {
+            _activeNpcId = npcId;
+            _screen = ScreenId.Npc;
             Rebuild();
         }
 
@@ -208,7 +224,12 @@ namespace Lingyan.Game
                 Destroy(_screenRoot.GetChild(i).gameObject);
             }
 
-            SetWard3DVisible(_screen == ScreenId.Ward);
+            SetWard3DVisible(_screen == ScreenId.Ward || _screen == ScreenId.Npc);
+            // NPC 屏叠在坊景上但不接管轨道相机
+            if (_screen == ScreenId.Npc)
+            {
+                Orbit.enabled = false;
+            }
 
             switch (_screen)
             {
@@ -223,6 +244,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Ward:
                     WardScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Npc:
+                    NpcScreen.Build(this, _screenRoot, _activeNpcId);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);
@@ -244,6 +268,7 @@ namespace Lingyan.Game
                 MainCamera.orthographic = false;
                 Orbit.enabled = true;
                 Orbit.ApplyTransform();
+                NpcHover.enabled = _screen == ScreenId.Ward;
                 if (ActiveSave != null)
                 {
                     Ward3D.ApplyHour(ActiveSave.Date.HourIndex, MainCamera);
@@ -256,6 +281,7 @@ namespace Lingyan.Game
                     Ward3D.Root.SetActive(false);
                 }
                 Orbit.enabled = false;
+                NpcHover.enabled = false;
                 MainCamera.cullingMask = 0;
                 RenderSettings.fog = false;
                 MainCamera.clearFlags = CameraClearFlags.SolidColor;

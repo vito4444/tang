@@ -65,16 +65,17 @@ namespace Lingyan.Game.UI
             float y = 0.66f;
             foreach (NpcScheduleDef npc in SampleWard.Npcs)
             {
+                string npcId = npc.NpcId;
                 ScheduleEntry entry = npc.At(save.Date.HourIndex);
                 PlaceDef place = SampleWard.Ward.Place(entry.PlaceId);
                 string line = c.L10n.TrF("ward.npc_line",
                     c.L10n.Tr(npc.NameKey),
                     c.L10n.Tr(place.NameKey),
                     c.L10n.Tr(entry.ActivityKey));
-                TextMeshProUGUI text = UiKit.Text(
+                // 行即入口：点开好感明细与互动菜单
+                UiKit.TextButton(
                     UiKit.At(nowPanel, "Npc_" + npc.NpcId, 0.5f, y, 560, 64),
-                    "T", line, 1.0f, InkPalette.PaperText, TextAlignmentOptions.MidlineLeft);
-                text.rectTransform.offsetMin = new Vector2(24, text.rectTransform.offsetMin.y);
+                    "Btn", line, () => { NpcScreen.Reset(); c.GoNpc(npcId); }, 1.0f);
                 y -= 0.24f;
             }
 

@@ -10,7 +10,7 @@ namespace Lingyan.Core.Saves
     /// </summary>
     public sealed class SaveData
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         [JsonProperty("schemaVersion", Required = Required.Always)]
         public int SchemaVersion { get; set; } = CurrentVersion;
@@ -52,6 +52,45 @@ namespace Lingyan.Core.Saves
 
         [JsonProperty("counters", Required = Required.Always)]
         public Dictionary<string, int> Counters { get; set; } = new Dictionary<string, int>();
+
+        /// <summary>通缉值（v2 起：偷窃败露等累积，武侯缉拿的依据）。</summary>
+        [JsonProperty("wantedLevel", Required = Required.Always)]
+        public int WantedLevel { get; set; }
+
+        /// <summary>NPC 社交状态（v2 起：好感账本、相识、互动旗标）。</summary>
+        [JsonProperty("npcStates", Required = Required.Always)]
+        public Dictionary<string, SaveNpcState> NpcStates { get; set; }
+            = new Dictionary<string, SaveNpcState>();
+    }
+
+    public sealed class SaveNpcState
+    {
+        [JsonProperty("met", Required = Required.Always)]
+        public bool Met { get; set; }
+
+        [JsonProperty("lastGreetDay", Required = Required.AllowNull)]
+        public string LastGreetDay { get; set; }
+
+        [JsonProperty("ledger", Required = Required.Always)]
+        public List<SaveAffinityEntry> Ledger { get; set; } = new List<SaveAffinityEntry>();
+
+        [JsonProperty("flags", Required = Required.Always)]
+        public List<string> Flags { get; set; } = new List<string>();
+    }
+
+    public sealed class SaveAffinityEntry
+    {
+        [JsonProperty("delta", Required = Required.Always)]
+        public int Delta { get; set; }
+
+        [JsonProperty("source", Required = Required.Always)]
+        public string SourceKey { get; set; }
+
+        [JsonProperty("param", Required = Required.AllowNull)]
+        public string SourceParam { get; set; }
+
+        [JsonProperty("date", Required = Required.Always)]
+        public string DateStamp { get; set; }
     }
 
     public sealed class SaveAttributes

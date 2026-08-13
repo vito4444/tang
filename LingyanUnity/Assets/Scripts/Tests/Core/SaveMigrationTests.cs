@@ -89,10 +89,85 @@ namespace Lingyan.Core.Tests
         public void NewerVersion_RefusedExplicitly()
         {
             SaveData save = FreshSave();
-            string json = _migrator.Serialize(save).Replace("\"schemaVersion\": 1", "\"schemaVersion\": 99");
+            string json = _migrator.Serialize(save).Replace(
+                "\"schemaVersion\": " + SaveData.CurrentVersion, "\"schemaVersion\": 99");
             var ex = Assert.Throws<SaveVersionTooNewException>(() => _migrator.Load(json));
             Assert.That(ex.FoundVersion, Is.EqualTo(99));
             Assert.That(ex.ReasonKey, Is.EqualTo("save.error.too_new"));
+        }
+
+        [Test]
+        public void V1_MigratesToV2_NpcStatesEmpty_ProgressIntact()
+        {
+            // 真实的 v1 存档样式（阶段 1–2 时代出的档）
+            const string v1 = @"{
+                ""schemaVersion"": 1,
+                ""createdUtc"": ""2026-08-13T00:00:00Z"",
+                ""protagonist"": ""mingjing"",
+                ""name"": ""沈知白"",
+                ""entryPath"": null,
+                ""attributes"": { ""stamina"": 6, ""health"": 6, ""strength"": 4, ""wisdom"": 12 },
+                ""offices"": { ""zhishi"": ""xian_wei"", ""sanguan"": ""jiangshi_lang"", ""xunZhuan"": 0, ""jue"": null },
+                ""reputation"": { ""guansheng"": 33, ""minwang"": 41, ""jianghu"": 9 },
+                ""reputationLedger"": [],
+                ""moneyWen"": 5230,
+                ""date"": { ""era"": ""chuigong"", ""eraYear"": 4, ""month"": 5, ""day"": 2, ""hourIndex"": 7 },
+                ""storyFlags"": { ""met_magistrate"": true },
+                ""counters"": { ""days_played"": 40 }
+            }";
+            SaveData restored = _migrator.Load(v1);
+            Assert.That(restored.SchemaVersion, Is.EqualTo(SaveData.CurrentVersion));
+            Assert.That(restored.WantedLevel, Is.EqualTo(0), "老档无案底");
+            Assert.That(restored.NpcStates, Is.Empty, "老档未识一人");
+            Assert.That(restored.MoneyWen, Is.EqualTo(5230), "钱一文不丢");
+            Assert.That(restored.Offices.ZhiShiId, Is.EqualTo("xian_wei"), "官身不丢");
+            Assert.That(restored.StoryFlags["met_magistrate"], Is.True, "剧情旗标不丢");
+        }
+
+        [Test]
+        public void V0_ChainsThroughToCurrent()
+        {
+            const string v0 = @"{
+                ""version"": 0, ""hero"": ""mingjing"", ""name"": ""沈知白"",
+                ""attrs"": { ""tili"": 6, ""shengming"": 6, ""liliang"": 4, ""zhihui"": 12 },
+                ""money_guan"": 1.0,
+                ""rep"": { ""guan"": 30, ""min"": 40, ""jianghu"": 10 },
+                ""date"": { ""era"": ""chuigong"", ""year"": 4, ""month"": 3, ""day"": 17, ""hour"": 5 }
+            }";
+            SaveData restored = _migrator.Load(v0);
+            Assert.That(restored.SchemaVersion, Is.EqualTo(SaveData.CurrentVersion),
+                "v0 档要能沿迁移链一路升到当前版");
+            Assert.That(restored.NpcStates, Is.Empty);
+        }
+
+        [Test]
+        public void V2_NpcState_RoundTrips()
+        {
+            SaveData save = FreshSave();
+            save.NpcStates["huan_fuzi"] = new SaveNpcState
+            {
+                Met = true,
+                LastGreetDay = "chuigong:4:3:17",
+                Ledger = new System.Collections.Generic.List<SaveAffinityEntry>
+                {
+                    new SaveAffinityEntry
+                    {
+                        Delta = 8,
+                        SourceKey = "affinity.src.gift_liked",
+                        SourceParam = "gift.wenxuan",
+                        DateStamp = "chuigong:4:3:17:5"
+                    }
+                },
+                Flags = new System.Collections.Generic.List<string> { "some_flag" }
+            };
+            save.WantedLevel = 5;
+
+            SaveData restored = _migrator.Load(_migrator.Serialize(save));
+            Assert.That(restored.WantedLevel, Is.EqualTo(5));
+            Assert.That(restored.NpcStates["huan_fuzi"].Ledger[0].Delta, Is.EqualTo(8));
+            Assert.That(restored.NpcStates["huan_fuzi"].Ledger[0].SourceParam,
+                Is.EqualTo("gift.wenxuan"));
+            Assert.That(restored.NpcStates["huan_fuzi"].Flags, Does.Contain("some_flag"));
         }
 
         [Test]

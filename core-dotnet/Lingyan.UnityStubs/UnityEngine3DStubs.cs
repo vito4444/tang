@@ -100,5 +100,29 @@ namespace UnityEngine
         public static bool GetMouseButton(int button) { return false; }
         public static float GetAxis(string axisName) { return 0f; }
         public static bool GetKey(KeyCode key) { return false; }
+        public static Vector3 mousePosition { get { return default; } }
+    }
+
+    public struct Ray
+    {
+        public Vector3 origin;
+        public Vector3 direction;
+    }
+
+    public class Collider : Component { }
+
+    public struct RaycastHit
+    {
+        public Collider collider { get { return null; } }
+        public Vector3 point { get { return default; } }
+    }
+
+    public static class Physics
+    {
+        public static bool Raycast(Ray ray, out RaycastHit hitInfo, float maxDistance)
+        {
+            hitInfo = default;
+            return false;
+        }
     }
 }

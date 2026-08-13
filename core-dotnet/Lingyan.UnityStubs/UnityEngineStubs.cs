@@ -57,6 +57,7 @@ namespace UnityEngine
         public int childCount { get { return 0; } }
         public Transform GetChild(int index) { return null; }
         public Transform Find(string n) { return null; }
+        public Transform parent { get { return null; } }
         public Quaternion localRotation { get; set; }
         public Quaternion rotation { get; set; }
         public Vector3 position { get; set; }
@@ -230,6 +231,7 @@ namespace UnityEngine
         public float farClipPlane { get; set; }
         public RenderTexture targetTexture { get; set; }
         public void Render() { }
+        public Ray ScreenPointToRay(Vector3 pos) { return default; }
     }
 
     public enum RenderMode { ScreenSpaceOverlay = 0, ScreenSpaceCamera = 1, WorldSpace = 2 }

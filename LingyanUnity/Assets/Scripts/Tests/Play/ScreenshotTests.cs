@@ -74,6 +74,24 @@ namespace Lingyan.PlayTests
             c.GoSettings();
             yield return null;
             yield return Snap(c, "08_settings");
+
+            // NPC 面板（先制造几笔往来，账本非空：寒暄+送书+切磋）
+            save.Date.HourIndex = 5;
+            var date = new Lingyan.Core.Calendar.TangDate(
+                save.Date.EraId, save.Date.EraYear, save.Date.Month,
+                save.Date.Day, save.Date.HourIndex);
+            Lingyan.Core.Social.NpcState state =
+                Lingyan.Core.Social.NpcStateStore.Load(save, "huan_fuzi");
+            Lingyan.Core.Social.InteractionService.Greet(state, date);
+            Lingyan.Core.Social.InteractionService.Gift(
+                Lingyan.Core.Social.NpcProfiles.Get("huan_fuzi"), state,
+                Lingyan.Core.Social.GiftCatalog.Get("gift_wenxuan"), save.MoneyWen, date);
+            Lingyan.Core.Social.NpcStateStore.Store(save, "huan_fuzi", state);
+            c.GoWard(save);
+            yield return null;
+            c.GoNpc("huan_fuzi");
+            yield return null;
+            yield return Snap(c, "09_npc_panel");
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)

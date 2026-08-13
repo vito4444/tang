@@ -65,7 +65,9 @@ namespace Lingyan.Core.Saves
                     HourIndex = start.HourIndex
                 },
                 StoryFlags = new Dictionary<string, bool>(),
-                Counters = new Dictionary<string, int>()
+                Counters = new Dictionary<string, int>(),
+                WantedLevel = 0,
+                NpcStates = new Dictionary<string, SaveNpcState>()
             };
         }
     }
