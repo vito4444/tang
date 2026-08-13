@@ -18,6 +18,10 @@ namespace Lingyan.Core.Saves.Migrations
             {
                 save["kaokeGrades"] = new JArray();
             }
+            if (save["housing"] == null)
+            {
+                save["housing"] = "hut";
+            }
             return save;
         }
     }

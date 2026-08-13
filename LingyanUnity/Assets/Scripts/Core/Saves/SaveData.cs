@@ -70,6 +70,10 @@ namespace Lingyan.Core.Saves
         /// <summary>历年考课等第（NineGrade 整数值，v3 起；迁转判定的依据）。</summary>
         [JsonProperty("kaokeGrades", Required = Required.Always)]
         public List<int> KaoKeGrades { get; set; } = new List<int>();
+
+        /// <summary>现居宅邸（v3 起；按官品解锁，见 HousingTable）。</summary>
+        [JsonProperty("housing", Required = Required.Always)]
+        public string HousingId { get; set; } = "hut";
     }
 
     public sealed class SaveCaseState

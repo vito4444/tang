@@ -69,7 +69,8 @@ namespace Lingyan.Core.Saves
                 WantedLevel = 0,
                 NpcStates = new Dictionary<string, SaveNpcState>(),
                 Cases = new Dictionary<string, SaveCaseState>(),
-                KaoKeGrades = new List<int>()
+                KaoKeGrades = new List<int>(),
+                HousingId = "hut"
             };
         }
     }

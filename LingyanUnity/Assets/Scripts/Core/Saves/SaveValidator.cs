@@ -63,6 +63,11 @@ namespace Lingyan.Core.Saves
                 throw new SaveCorruptException("通缉值为负: " + data.WantedLevel);
             }
 
+            if (Economy.HousingTable.Get(data.HousingId) == null)
+            {
+                throw new SaveCorruptException("未知宅邸: " + data.HousingId);
+            }
+
             if (EraTable.Get(data.Date.EraId) == null)
             {
                 throw new SaveCorruptException("未知年号: " + data.Date.EraId);

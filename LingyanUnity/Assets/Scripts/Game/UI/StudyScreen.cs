@@ -132,6 +132,15 @@ namespace Lingyan.Game.UI
             ry -= 0.075f;
             Row(right, "Term", ry, c.L10n.Tr("study.solar_term"),
                 en ? date.SolarTerm.En : date.SolarTerm.Zh);
+            ry -= 0.075f;
+            Row(right, "Housing", ry, c.L10n.Tr("study.housing"),
+                c.L10n.Tr(Lingyan.Core.Economy.HousingTable.Get(save.HousingId).NameKey));
+            if (save.WantedLevel > 0)
+            {
+                ry -= 0.075f;
+                Row(right, "Wanted", ry, c.L10n.Tr("study.wanted"),
+                    save.WantedLevel.ToString());
+            }
 
             // 底部动作
             UiKit.TextButton(UiKit.At(root, "BtnSave", 0.22f, 0.075f, 460, 56),
@@ -254,7 +263,43 @@ namespace Lingyan.Game.UI
                 UiKit.TextButton(UiKit.At(root, "BtnKaoke", 0.94f, 0.875f, 220, 50),
                     "Btn", c.L10n.Tr("career.kaoke"),
                     () => RunKaoKe(c, save, now, year), 1.0f, canExam);
+
+                // 支取月俸：每月一次
+                int yearMonth = year * 100 + save.Date.Month;
+                save.Counters.TryGetValue("last_salary_ym", out int lastSalary);
+                bool canDraw = yearMonth > lastSalary;
+                UiKit.TextButton(UiKit.At(root, "BtnSalary", 0.94f, 0.825f, 220, 50),
+                    "Btn", c.L10n.Tr("career.salary"),
+                    () => DrawSalary(c, save, yearMonth), 1.0f, canDraw);
             }
+        }
+
+        private static void DrawSalary(GameController c, SaveData save, int yearMonth)
+        {
+            OfficeDef office = OfficialLadders.Get(save.Offices.ZhiShiId);
+            if (office?.Grade == null)
+            {
+                _noticeText = c.L10n.Tr("career.salary_none");
+                c.GoStudy(save);
+                return;
+            }
+            Lingyan.Core.Economy.MonthlyPay pay =
+                Lingyan.Core.Economy.SalaryTable.For(office.Grade.Value);
+            Lingyan.Core.Social.OutcomeApplier.ApplyMoney(save, pay.TotalWen);
+            save.Counters["last_salary_ym"] = yearMonth;
+
+            bool en = c.L10n.Locale == Locale.En;
+            string F(long wen)
+            {
+                var money = new Money(wen);
+                return en ? money.ToEn() : money.ToZh();
+            }
+            _noticeText = c.L10n.TrF("career.salary_detail",
+                F(pay.SalaryWen), pay.RiceShi,
+                F((long)System.Math.Round(pay.RiceShi
+                    * Lingyan.Core.Economy.SalaryTable.RicePricePerShi)),
+                F(pay.FieldRentWen), F(pay.TotalWen));
+            c.GoStudy(save);
         }
 
         private static void RunKaoKe(GameController c, SaveData save, TangDate now, int year)
