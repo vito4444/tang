@@ -29,6 +29,17 @@ namespace Lingyan.Game.World3D
             _gateLeaves = gateLeaves;
         }
 
+        /// <summary>
+        /// 坊景 NPC 标记显隐（对决时隐去应战者，免与对决化身"双人同框"——第十四轮实测）。
+        /// </summary>
+        public void SetNpcMarkerVisible(string npcId, bool visible)
+        {
+            if (_npcMarkers.TryGetValue(npcId, out GameObject marker))
+            {
+                marker.SetActive(visible);
+            }
+        }
+
         /// <summary>时辰驱动：天光、坊门（暮鼓闭、晓鼓开）、NPC 按作息表落位。</summary>
         public void ApplyHour(int hourIndex, Camera camera)
         {

@@ -34,6 +34,9 @@ namespace Lingyan.Game.UI
 
             Vector3 arena = new Vector3(0f, 0f, -6f);
 
+            // 应战者以对决化身上场，坊景里他的标记先隐去（免"双人同框"）
+            c.Ward3D.SetNpcMarkerVisible(npcId, false);
+
             // 像素唐人上场：玩家青绿袍、对手赭袍
             _playerBody = PixelPerson.Build(
                 c.Ward3D.Root.transform, "DuelPlayer", new Color(0.30f, 0.42f, 0.30f));
@@ -150,6 +153,10 @@ namespace Lingyan.Game.UI
             if (_controller != null) { Object.Destroy(_controller); _controller = null; }
             if (_playerBody != null) { Object.Destroy(_playerBody); _playerBody = null; }
             if (_rivalBody != null) { Object.Destroy(_rivalBody); _rivalBody = null; }
+            if (_npcId != null && c.Ward3D != null)
+            {
+                c.Ward3D.SetNpcMarkerVisible(_npcId, true); // 对决散场，坊景标记归位
+            }
         }
     }
 
