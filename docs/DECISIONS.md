@@ -97,3 +97,17 @@ Unity 按名字驱动旋转。
 规格第十五节的方法论（"一个诊断，胜过第八个假设"）落为工程习惯：
 启动时 `[Smoke]` 日志直接打印运行中的关键值（词条数、术语数、字体是否加载、
 存档路径），出问题先看运行时实值，不猜。
+
+## D19 shader 一律放 Resources，运行时 Resources.Load 直取（第十七轮出包教训）
+运行时 `Shader.Find` 的 shader（无论内置还是自写）若无资产牵引、不在
+GraphicsSettings 的 Always Included 表里，出包即被裁剪——编辑器自带全部内置
+shader，问题只在真机 exe 暴露（像素人洋红、水墨后处理直通）。
+故：自写 shader 全放 `Assets/Resources/Shaders/`（Resources 随包必含），
+代码 `Resources.Load<Shader>` 直取、`Shader.Find` 只作兜底；不依赖内置
+Unlit/Transparent，改用自写 `Lingyan/UnlitTransparent`。
+
+## D20 FBX 与 .shader 的 .meta 不入库（有意为之）
+`gen_meta.py` 生成确定性 .meta 覆盖脚本/文本/目录；FBX 与 shader 的导入器设置
+（ModelImporter/ShaderImporter）字段多且随版本演化，手写易在导入时被 Unity
+重写产生噪声 diff。二者均经 `Resources.Load` 按路径引用、无跨资产 GUID 引用，
+GUID 每机重生成无碍。若未来出现 GUID 引用（如场景/预制体牵引），再补入库。
