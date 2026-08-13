@@ -254,6 +254,9 @@
   "dlg.huan.case2": { "zh": "……卷宗封在县廨西阁。老朽只说到这里，贤契好自为之。", "en": "…The file sits sealed in the west chamber of the county office. That is all this old man will say—mind your steps." },
   "dlg.huan.c_promise": { "zh": "谨记，三日后奉还。", "en": "Understood—returned within three days." },
   "dlg.huan.lend": { "zh": "书要爱惜。三日后还我，缺一页都不行。", "en": "Treat it kindly. Three days, and not a page missing." },
+  "dlg.huan.c_well": { "zh": "井里那具骸骨——你可记得当年的坊正？", "en": "The bones in the well—do you remember the ward head of those years?" },
+  "dlg.huan.well_memory": { "zh": "桓夫子放下书卷，半晌方道：王坊正……借过老朽一部《汉书》，没来得及还。都说他卷了公廨钱跑了，老朽当年就不信——爱书之人，不做那等事。", "en": "Master Huan sets down his scroll and is long silent. 'Ward Head Wang... once borrowed my Book of Han, and never had the chance to return it. They said he ran off with the ward funds. I never believed it—a man who loves books does not do such things.'" },
+  "dlg.huan.c_well_noted": { "zh": "记下了。逝者当有个公道。", "en": "Noted. The dead deserve their due." },
 
   "dlg.kang.greet": { "zh": "郎君有何差遣？搬抬跑腿，坊里坊外，没有康三不熟的路。", "en": "What service, sir? Hauling or errands—inside the ward or out, there is no road Kang San does not know." },
   "dlg.kang.c_market": { "zh": "近日市上如何？", "en": "How fares the market these days?" },

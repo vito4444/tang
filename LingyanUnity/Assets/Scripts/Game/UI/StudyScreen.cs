@@ -168,6 +168,8 @@ namespace Lingyan.Game.UI
                         var now = new TangDate(save.Date.EraId, save.Date.EraYear,
                             save.Date.Month, save.Date.Day, save.Date.HourIndex);
                         Lingyan.Core.Cases.CaseService.Open(save, currentCase, now);
+                        // 开卷旗标：对话树以此解锁案件相关话头（如桓夫子忆旧）
+                        save.StoryFlags["case_opened_" + currentCase.Id] = true;
                         Lingyan.Core.Terminology.CodexService.OnEvent(
                             save, Lingyan.Core.Terminology.CodexEvent.CaseOpened);
                         Lingyan.Core.Terminology.CodexService.OnEvent(

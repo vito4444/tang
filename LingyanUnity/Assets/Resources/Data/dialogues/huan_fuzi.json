@@ -9,6 +9,18 @@
       "choices": [
         { "text": "dlg.huan.c_news", "goto": "news" },
         {
+          "text": "dlg.huan.c_well",
+          "conditions": [
+            { "kind": "FlagSet", "flag": "case_opened_well_case" },
+            { "kind": "FlagNotSet", "flag": "huan_well_memory" }
+          ],
+          "effects": [
+            { "kind": "SetFlag", "flag": "huan_well_memory" },
+            { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" }
+          ],
+          "goto": "well_memory"
+        },
+        {
           "text": "dlg.huan.c_ask_book",
           "effects": [ { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" } ],
           "goto": "book"
@@ -87,6 +99,13 @@
       "text": "dlg.huan.lend",
       "choices": [
         { "text": "dlg.huan.c_promise", "goto": null }
+      ]
+    },
+    {
+      "id": "well_memory",
+      "text": "dlg.huan.well_memory",
+      "choices": [
+        { "text": "dlg.huan.c_well_noted", "goto": null }
       ]
     }
   ]
