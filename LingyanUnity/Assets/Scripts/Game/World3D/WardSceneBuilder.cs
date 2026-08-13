@@ -14,6 +14,7 @@ namespace Lingyan.Game.World3D
         private readonly Dictionary<string, Vector3> _anchors;
         private readonly Dictionary<string, GameObject> _npcMarkers;
         private readonly List<GameObject> _gateLeaves;
+        private bool _placedOnce;
 
         internal WardScene(
             GameObject root, DayLightRig lightRig,
@@ -49,9 +50,23 @@ namespace Lingyan.Game.World3D
                 if (_npcMarkers.TryGetValue(npc.NpcId, out GameObject marker)
                     && _anchors.TryGetValue(entry.PlaceId, out Vector3 anchor))
                 {
-                    marker.transform.localPosition = anchor;
+                    // 首次落位瞬到；此后时辰变更走过去（两帧步态，阶段 9 行走动画）
+                    var walker = marker.GetComponent<PixelWalker>();
+                    if (walker == null)
+                    {
+                        marker.transform.localPosition = anchor;
+                    }
+                    else if (!_placedOnce)
+                    {
+                        walker.Snap(anchor);
+                    }
+                    else
+                    {
+                        walker.MoveTo(anchor);
+                    }
                 }
             }
+            _placedOnce = true;
         }
     }
 

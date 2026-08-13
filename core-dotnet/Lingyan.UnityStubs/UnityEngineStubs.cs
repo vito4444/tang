@@ -149,6 +149,8 @@ namespace UnityEngine
             return new Vector3(a.x * d, a.y * d, a.z * d);
         }
         public Vector3 normalized { get { return this; } }
+        public float magnitude { get { return (float)System.Math.Sqrt(x * x + y * y + z * z); } }
+        public float sqrMagnitude { get { return x * x + y * y + z * z; } }
     }
 
     public struct Color

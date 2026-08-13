@@ -12,7 +12,8 @@ namespace Lingyan.Game.World3D
     {
         // 16×24 点阵。字符：. 透明  H 幞头  F 面  R 袍(参数色)  D 袍暗部
         // B 革带  S 靴  N 手
-        private static readonly string[] Pattern =
+        // 上身 18 行共用，腿脚 6 行分立姿与跨步两帧（阶段 9：行走动画帧）。
+        private static readonly string[] Torso =
         {
             "................",
             ".....HHHH.......",
@@ -32,6 +33,10 @@ namespace Lingyan.Game.World3D
             "..RDRRRRRRDR....",
             "..RDRRRRRRDR....",
             "..RDRRRRRRDR....",
+        };
+
+        private static readonly string[] LegsIdle =
+        {
             "...DRRRRRRD.....",
             "...DRRRRRRD.....",
             "...RRR..RRR.....",
@@ -40,17 +45,42 @@ namespace Lingyan.Game.World3D
             "..SSSS..SSSS....",
         };
 
-        private static readonly Dictionary<Color, Texture2D> Cache =
-            new Dictionary<Color, Texture2D>();
-
-        private static Texture2D Texture(Color robe)
+        /// <summary>跨步帧：双腿前后分开，袍摆略张。</summary>
+        private static readonly string[] LegsStride =
         {
-            if (Cache.TryGetValue(robe, out Texture2D cached) && cached != null)
+            "...DRRRRRRD.....",
+            "..DRRRRRRRRD....",
+            "..RRR....RRR....",
+            ".RRR......RRR...",
+            ".SSS......SSS...",
+            "SSSS......SSSS..",
+        };
+
+        /// <summary>0 = 立姿（也是行走帧 B），1 = 跨步帧。</summary>
+        public const int FrameIdle = 0;
+        public const int FrameStride = 1;
+
+        private static readonly Dictionary<(Color, int), Texture2D> Cache =
+            new Dictionary<(Color, int), Texture2D>();
+
+        private static string[] Pattern(int frame)
+        {
+            string[] legs = frame == FrameStride ? LegsStride : LegsIdle;
+            var rows = new string[Torso.Length + legs.Length];
+            Torso.CopyTo(rows, 0);
+            legs.CopyTo(rows, Torso.Length);
+            return rows;
+        }
+
+        internal static Texture2D Texture(Color robe, int frame)
+        {
+            if (Cache.TryGetValue((robe, frame), out Texture2D cached) && cached != null)
             {
                 return cached;
             }
-            int width = Pattern[0].Length;
-            int height = Pattern.Length;
+            string[] rows = Pattern(frame);
+            int width = rows[0].Length;
+            int height = rows.Length;
             var tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
             tex.wrapMode = TextureWrapMode.Clamp;
             tex.filterMode = FilterMode.Point; // 像素风的关键：点采样
@@ -64,7 +94,7 @@ namespace Lingyan.Game.World3D
 
             for (int y = 0; y < height; y++)
             {
-                string row = Pattern[height - 1 - y]; // 纹理自下而上
+                string row = rows[height - 1 - y]; // 纹理自下而上
                 for (int x = 0; x < width; x++)
                 {
                     Color c;
@@ -83,7 +113,7 @@ namespace Lingyan.Game.World3D
                 }
             }
             tex.Apply();
-            Cache[robe] = tex;
+            Cache[(robe, frame)] = tex;
             return tex;
         }
 
@@ -100,10 +130,14 @@ namespace Lingyan.Game.World3D
             quad.transform.localScale = new Vector3(1.17f, 1.75f, 1f);
 
             var material = new Material(Shader.Find("Unlit/Transparent"));
-            material.mainTexture = Texture(robe);
+            material.mainTexture = Texture(robe, FrameIdle);
             var renderer = quad.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             quad.AddComponent<BillboardSprite>();
+
+            // 行走组件：时辰变更时从旧位走到新位，步态两帧交替
+            var walker = root.AddComponent<PixelWalker>();
+            walker.Bind(material, Texture(robe, FrameIdle), Texture(robe, FrameStride));
 
             // 脚底假影（unlit 面片不投影，给一枚椭圆影贴地）
             GameObject shadow = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -140,6 +174,87 @@ namespace Lingyan.Game.World3D
             }
             _shadowTex.Apply();
             return _shadowTex;
+        }
+    }
+
+    /// <summary>
+    /// 像素人行走：MoveTo 后沿直线走向目标（约 1.7 m/s），
+    /// 步态帧每 0.18s 交替（跨步/立姿），到位即收步回立姿。
+    /// Snap 用于首次落位（开场不该看到全坊人齐步走）。
+    /// </summary>
+    public sealed class PixelWalker : MonoBehaviour
+    {
+        private const float Speed = 1.7f;
+        private const float FrameSeconds = 0.18f;
+
+        private Material _material;
+        private Texture2D _idle;
+        private Texture2D _stride;
+        private Vector3 _target;
+        private bool _moving;
+        private float _frameClock;
+        private bool _strideUp;
+
+        public void Bind(Material material, Texture2D idle, Texture2D stride)
+        {
+            _material = material;
+            _idle = idle;
+            _stride = stride;
+        }
+
+        public void Snap(Vector3 localPosition)
+        {
+            transform.localPosition = localPosition;
+            _target = localPosition;
+            StopWalking();
+        }
+
+        public void MoveTo(Vector3 localPosition)
+        {
+            _target = localPosition;
+            if ((transform.localPosition - _target).sqrMagnitude < 0.01f)
+            {
+                StopWalking();
+                return;
+            }
+            _moving = true;
+        }
+
+        private void Update()
+        {
+            if (!_moving) { return; }
+
+            Vector3 current = transform.localPosition;
+            Vector3 delta = _target - current;
+            float step = Speed * Time.deltaTime;
+            if (delta.magnitude <= step)
+            {
+                Snap(_target);
+                return;
+            }
+            transform.localPosition = current + delta.normalized * step;
+
+            _frameClock += Time.deltaTime;
+            if (_frameClock >= FrameSeconds)
+            {
+                _frameClock = 0f;
+                _strideUp = !_strideUp;
+                if (_material != null)
+                {
+                    _material.mainTexture = _strideUp ? _stride : _idle;
+                }
+            }
+        }
+
+        private void StopWalking()
+        {
+            _moving = false;
+            _frameClock = 0f;
+            _strideUp = false;
+            if (_material != null)
+            {
+                _material.mainTexture = _idle;
+            }
         }
     }
 
