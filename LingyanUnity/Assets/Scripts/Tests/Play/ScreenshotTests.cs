@@ -214,6 +214,13 @@ namespace Lingyan.PlayTests
             c.GoCase();
             yield return null;
             yield return Snap(c, "17_case2");
+
+            // 铜匦四匦面板（书房动作列切换，真点按钮）
+            c.GoStudy(save);
+            yield return null;
+            ClickButton("BtnTongGui");
+            yield return null;
+            yield return Snap(c, "18_tonggui");
         }
 
         /// <summary>按节点名点 UI 按钮（走 onClick，顺带验证按钮真挂了监听）。</summary>
