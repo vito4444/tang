@@ -221,6 +221,23 @@ namespace Lingyan.PlayTests
             ClickButton("BtnTongGui");
             yield return null;
             yield return Snap(c, "18_tonggui");
+
+            // 军线书房（戍卒任队正·秋七月：防秋点兵在列，勋轨待积转）
+            CharacterDraft milDraft = CharacterCreationRules.NewDraft(ProtagonistId.ShuZu);
+            SaveData milSave = SaveFactory.NewGame(milDraft, DateTime.UtcNow);
+            milSave.Offices.ZhiShiId = "dui_zheng";
+            milSave.Offices.SanGuanId = "renyong_fuwei"; // 正九品下武散，与队正同品
+            milSave.Date.Month = 7;
+            c.GoStudy(milSave);
+            yield return null;
+            yield return Snap(c, "19_mil_study");
+
+            // 商线书房（胡商·遣商队在列，市籍虚衔态）
+            CharacterDraft tradeDraft = CharacterCreationRules.NewDraft(ProtagonistId.HuShang);
+            SaveData tradeSave = SaveFactory.NewGame(tradeDraft, DateTime.UtcNow);
+            c.GoStudy(tradeSave);
+            yield return null;
+            yield return Snap(c, "20_trade_study");
         }
 
         /// <summary>按节点名点 UI 按钮（走 onClick，顺带验证按钮真挂了监听）。</summary>
