@@ -144,10 +144,10 @@ def m_timber():
         m, nodes, links, bsdf, vec = _base("timber")
         cloud = _noise(nodes, links, vec, 1.6, detail=3.0)
         base = _ramp(nodes, links, cloud.outputs["Fac"],
-                     0.25, (0.235, 0.072, 0.042, 1), 0.75, (0.330, 0.115, 0.062, 1))
+                     0.25, (0.068, 0.016, 0.009, 1), 0.75, (0.118, 0.030, 0.016, 1))
         grain = _noise(nodes, links, vec, 34.0, detail=6.0, rough=0.7, distortion=0.4)
         mix = _mix_color(nodes, links, grain.outputs["Fac"],
-                         base.outputs["Color"], (0.190, 0.060, 0.036, 1))
+                         base.outputs["Color"], (0.052, 0.013, 0.007, 1))
         mix.inputs["Factor"].default_value = 0.0
         links.new(grain.outputs["Fac"], mix.inputs["Factor"])
         mix2 = nodes.new("ShaderNodeMix")
@@ -157,6 +157,7 @@ def m_timber():
         links.new(mix.outputs[2], mix2.inputs[7])
         vary = _per_object_vary(nodes, links, mix2.outputs[2], 0.05)
         links.new(vary.outputs[2], bsdf.inputs["Base Color"])
+        bsdf.inputs["Specular Tint"].default_value = (0.85, 0.35, 0.22, 1)
         _rough_noise(nodes, links, bsdf, vec, 0.68, 0.10, scale=30.0)
         _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.04)
         return m
@@ -168,9 +169,10 @@ def m_timber_dark():
         m, nodes, links, bsdf, vec = _base("timber_dark")
         cloud = _noise(nodes, links, vec, 2.0, detail=3.0)
         base = _ramp(nodes, links, cloud.outputs["Fac"],
-                     0.2, (0.165, 0.060, 0.038, 1), 0.8, (0.245, 0.092, 0.055, 1))
+                     0.2, (0.048, 0.013, 0.008, 1), 0.8, (0.080, 0.022, 0.012, 1))
         vary = _per_object_vary(nodes, links, base.outputs["Color"], 0.06)
         links.new(vary.outputs[2], bsdf.inputs["Base Color"])
+        bsdf.inputs["Specular Tint"].default_value = (0.80, 0.32, 0.20, 1)
         _rough_noise(nodes, links, bsdf, vec, 0.72, 0.08)
         return m
     return _cached("timber_dark", build)
@@ -230,9 +232,9 @@ def m_ridge():
         m, nodes, links, bsdf, vec = _base("ridge")
         cloud = _noise(nodes, links, vec, 5.0, detail=3.0)
         base = _ramp(nodes, links, cloud.outputs["Fac"],
-                     0.2, (0.052, 0.056, 0.066, 1), 0.8, (0.095, 0.100, 0.112, 1))
+                     0.2, (0.028, 0.031, 0.038, 1), 0.8, (0.058, 0.062, 0.072, 1))
         links.new(base.outputs["Color"], bsdf.inputs["Base Color"])
-        _rough_noise(nodes, links, bsdf, vec, 0.66, 0.10, scale=12.0)
+        _rough_noise(nodes, links, bsdf, vec, 0.74, 0.08, scale=12.0)
         return m
     return _cached("ridge", build)
 
@@ -241,26 +243,14 @@ def m_stone():
     """石灰岩台基/柱础：Voronoi 石斑 + 色噪 + 颗粒凹凸。"""
     def build():
         m, nodes, links, bsdf, vec = _base("stone")
-        # 条石接缝：低频 Voronoi 细黑缝，不做碎拼
-        voro = nodes.new("ShaderNodeTexVoronoi")
-        voro.feature = "DISTANCE_TO_EDGE"
-        voro.inputs["Scale"].default_value = 1.6
-        links.new(vec, voro.inputs["Vector"])
-        crack = _ramp(nodes, links, voro.outputs["Distance"],
-                      0.0, (0.62, 0.60, 0.56, 1), 0.035, (1, 1, 1, 1))
-        cloud = _noise(nodes, links, vec, 2.4, detail=4.0)
+        # 素面条石：色噪 + 细颗粒凹凸，不做乱石缝（Voronoi 出的是卵石拼，弃）
+        cloud = _noise(nodes, links, vec, 2.0, detail=4.0)
         tone = _ramp(nodes, links, cloud.outputs["Fac"],
-                     0.2, (0.455, 0.438, 0.400, 1), 0.8, (0.525, 0.508, 0.468, 1))
-        mul = nodes.new("ShaderNodeMix")
-        mul.data_type = "RGBA"
-        mul.blend_type = "MULTIPLY"
-        mul.inputs["Factor"].default_value = 1.0
-        links.new(tone.outputs["Color"], mul.inputs[6])
-        links.new(crack.outputs["Color"], mul.inputs[7])
-        links.new(mul.outputs[2], bsdf.inputs["Base Color"])
+                     0.2, (0.435, 0.418, 0.382, 1), 0.8, (0.505, 0.488, 0.448, 1))
+        links.new(tone.outputs["Color"], bsdf.inputs["Base Color"])
         grain = _noise(nodes, links, vec, 90.0, detail=3.0)
-        _rough_noise(nodes, links, bsdf, vec, 0.86, 0.06, scale=60.0)
-        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.04)
+        _rough_noise(nodes, links, bsdf, vec, 0.88, 0.05, scale=60.0)
+        _bump(nodes, links, bsdf, grain.outputs["Fac"], 0.035)
         return m
     return _cached("stone", build)
 
@@ -809,7 +799,7 @@ def build_ground():
 
 def setup_world():
     sun = bpy.data.lights.new("sun", "SUN")
-    sun.energy = 1.4
+    sun.energy = 2.3
     sun.angle = math.radians(1.6)
     sun.color = (1.0, 0.95, 0.86)
     sun_ob = bpy.data.objects.new("sun", sun)
@@ -827,13 +817,13 @@ def setup_world():
     sky.sun_rotation = math.radians(145)
     sky.sun_intensity = 0.10
     bg = nodes["Background"]
-    bg.inputs["Strength"].default_value = 0.22
+    bg.inputs["Strength"].default_value = 0.11
     links.new(sky.outputs["Color"], bg.inputs["Color"])
 
     scene = bpy.context.scene
     scene.view_settings.view_transform = "Filmic"
     scene.view_settings.look = "Medium High Contrast"
-    scene.view_settings.exposure = -0.65
+    scene.view_settings.exposure = -0.72
 
 
 def add_camera(name, loc, look_at, fov=38):
@@ -1051,11 +1041,15 @@ def main():
             export_fbx(os.path.join(out_dir, name + ".fbx"))
         return
 
+    quick = mode == "--render-quick"  # 单机位低采样：调材质的快速迭代档
     clear_scene()
     build_ground()
     build_hall(9.0, 6.0, 3.6)
     setup_world()
     cam1 = add_camera("cam_front", (15.5, -18.5, 7.0), (0, 0.4, 3.6), fov=36)
+    if quick:
+        render(cam1, os.path.join(out_dir, "hall_front.png"), samples=72)
+        return
     cam2 = add_camera("cam_eave", (7.6, -9.2, 4.4), (2.0, -2.4, 5.4), fov=28)
     cam3 = add_camera("cam_ridge", (-11.5, -10.0, 9.6), (-3.6, 0.4, 6.2), fov=30)
     render(cam1, os.path.join(out_dir, "hall_front.png"))
