@@ -205,9 +205,11 @@ namespace Lingyan.Game.UI
                     return InteractionService.Steal(
                         data.Profile, s, save.Attributes.Wisdom, witnesses, Rng, date);
                 }));
-            Btn(c, panel, xs[2], rowY2, "interact.propose", null, false);
+            // 提亲：议亲走书房遣媒（对象非坊民），此处直通议亲屏
+            Btn(c, panel, xs[2], rowY2, "interact.propose",
+                () => { MarriageScreen.Reset(); c.GoMarriage(); });
 
-            // 雇佣：可雇者活钮（已是长随→显「长随」灰钮），不可雇者灰
+            // 雇佣：可雇者活钮（已是长随→显「长随」灰钮），不受雇者注明缘由
             bool hired = RetainerService.IsHired(save, npcId);
             if (hired)
             {
@@ -231,7 +233,10 @@ namespace Lingyan.Game.UI
             }
             else
             {
-                Btn(c, panel, xs[3], rowY2, "interact.hire", null, false);
+                // 功能已实装，灰因是「此人不受雇」而非待实装（第十三轮报的措辞失实）
+                UiKit.TextButton(UiKit.At(panel, "Act_interact.hire", xs[3], rowY2, 210, 50),
+                    "Btn", c.L10n.Tr("interact.hire") + " " + c.L10n.Tr("interact.hire_na"),
+                    null, 1.0f, false);
             }
         }
 
