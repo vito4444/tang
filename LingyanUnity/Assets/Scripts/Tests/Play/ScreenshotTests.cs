@@ -75,26 +75,30 @@ namespace Lingyan.PlayTests
             yield return null;
             yield return Snap(c, "08_settings");
 
-            // NPC 面板（先制造几笔往来，账本非空：寒暄+送书+切磋）
-            save.Date.HourIndex = 5;
+            // NPC 面板（先制造几笔往来，账本非空：寒暄+送酒）
+            // 第十三轮改拍康三：雇佣活钮只在可雇者（HireWageWen=500）面板可见，
+            // 桓夫子不可雇灰注属设计，拍他验证不了雇佣实装。
+            // 卯时=3：康三在南门候门（4–9 在西市＝不在场只渲「不在」行）。
+            save.Date.HourIndex = 3;
             var date = new Lingyan.Core.Calendar.TangDate(
                 save.Date.EraId, save.Date.EraYear, save.Date.Month,
                 save.Date.Day, save.Date.HourIndex);
             Lingyan.Core.Social.NpcState state =
-                Lingyan.Core.Social.NpcStateStore.Load(save, "huan_fuzi");
+                Lingyan.Core.Social.NpcStateStore.Load(save, "kang_san");
             Lingyan.Core.Social.InteractionService.Greet(state, date);
-            save.Inventory["gift_wenxuan"] = 1; // 礼从行囊出（v4）：先备一部文选
+            save.Inventory["gift_jiu"] = 1; // 礼从行囊出（v4）：先备一坛酒（康三嗜酒食）
             Lingyan.Core.Social.InteractionService.Gift(
-                Lingyan.Core.Social.NpcProfiles.Get("huan_fuzi"), state,
-                Lingyan.Core.Social.GiftCatalog.Get("gift_wenxuan"),
-                Lingyan.Core.Economy.MarketService.CountOf(save, "gift_wenxuan"), date);
-            Lingyan.Core.Economy.MarketService.TakeOne(save, "gift_wenxuan");
-            Lingyan.Core.Social.NpcStateStore.Store(save, "huan_fuzi", state);
+                Lingyan.Core.Social.NpcProfiles.Get("kang_san"), state,
+                Lingyan.Core.Social.GiftCatalog.Get("gift_jiu"),
+                Lingyan.Core.Economy.MarketService.CountOf(save, "gift_jiu"), date);
+            Lingyan.Core.Economy.MarketService.TakeOne(save, "gift_jiu");
+            Lingyan.Core.Social.NpcStateStore.Store(save, "kang_san", state);
             c.GoWard(save);
             yield return null;
-            c.GoNpc("huan_fuzi");
+            c.GoNpc("kang_san");
             yield return null;
             yield return Snap(c, "09_npc_panel");
+            save.Date.HourIndex = 5;
 
             // 对话屏（桓夫子对话树入口）
             bool started = Lingyan.Game.UI.DialogueScreen.TryStart(c, "huan_fuzi");
