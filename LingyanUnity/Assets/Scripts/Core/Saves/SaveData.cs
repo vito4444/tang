@@ -66,6 +66,10 @@ namespace Lingyan.Core.Saves
         [JsonProperty("cases", Required = Required.Always)]
         public Dictionary<string, SaveCaseState> Cases { get; set; }
             = new Dictionary<string, SaveCaseState>();
+
+        /// <summary>历年考课等第（NineGrade 整数值，v3 起；迁转判定的依据）。</summary>
+        [JsonProperty("kaokeGrades", Required = Required.Always)]
+        public List<int> KaoKeGrades { get; set; } = new List<int>();
     }
 
     public sealed class SaveCaseState

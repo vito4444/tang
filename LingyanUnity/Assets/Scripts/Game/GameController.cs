@@ -28,7 +28,7 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue }
+        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
@@ -175,6 +175,13 @@ namespace Lingyan.Game
             Rebuild();
         }
 
+        /// <summary>线索板。</summary>
+        public void GoCase()
+        {
+            _screen = ScreenId.Case;
+            Rebuild();
+        }
+
         public void GoSettings()
         {
             if (_screen != ScreenId.Settings)
@@ -258,6 +265,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Dialogue:
                     DialogueScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Case:
+                    CaseScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

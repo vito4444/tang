@@ -14,6 +14,10 @@ namespace Lingyan.Core.Saves.Migrations
             {
                 save["cases"] = new JObject();
             }
+            if (save["kaokeGrades"] == null)
+            {
+                save["kaokeGrades"] = new JArray();
+            }
             return save;
         }
     }

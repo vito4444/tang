@@ -131,12 +131,30 @@ namespace Lingyan.Game.UI
                     c.GoMainMenu();
                 }, 1.1f);
 
-            UiKit.TextButton(UiKit.At(root, "BtnWard", 0.50f, 0.075f, 320, 56),
+            UiKit.TextButton(UiKit.At(root, "BtnWard", 0.44f, 0.075f, 300, 56),
                 "Btn", c.L10n.Tr("study.go_out"),
                 () => c.GoWard(save), 1.15f);
 
-            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.78f, 0.075f, 540, 56),
-                "Btn", c.L10n.Tr("study.chapter_locked"), null, 1.1f, false);
+            // 案牍：听过丝帛案传闻才可接案；已接直接进线索板
+            bool caseOpen = save.Cases.ContainsKey(Lingyan.Core.Cases.SilkCase.CaseId);
+            bool heardCase = save.StoryFlags.TryGetValue("heard_silk_case", out bool heard) && heard;
+            UiKit.TextButton(UiKit.At(root, "BtnCase", 0.66f, 0.075f, 320, 56),
+                "Btn", c.L10n.Tr(caseOpen ? "study.case_board" : "study.case_take"),
+                () =>
+                {
+                    if (!caseOpen)
+                    {
+                        var now = new TangDate(save.Date.EraId, save.Date.EraYear,
+                            save.Date.Month, save.Date.Day, save.Date.HourIndex);
+                        Lingyan.Core.Cases.CaseService.Open(
+                            save, Lingyan.Core.Cases.SilkCase.Def, now);
+                    }
+                    CaseScreen.Reset();
+                    c.GoCase();
+                }, 1.1f, caseOpen || heardCase);
+
+            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.875f, 0.075f, 380, 56),
+                "Btn", c.L10n.Tr("study.chapter_locked"), null, 1.0f, false);
 
             UiKit.TextButton(UiKit.At(root, "BtnSettings", 0.94f, 0.94f, 180, 48),
                 "Btn", c.L10n.Tr("menu.settings"), c.GoSettings, 1.0f);

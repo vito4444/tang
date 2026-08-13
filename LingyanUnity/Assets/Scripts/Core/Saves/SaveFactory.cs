@@ -68,7 +68,8 @@ namespace Lingyan.Core.Saves
                 Counters = new Dictionary<string, int>(),
                 WantedLevel = 0,
                 NpcStates = new Dictionary<string, SaveNpcState>(),
-                Cases = new Dictionary<string, SaveCaseState>()
+                Cases = new Dictionary<string, SaveCaseState>(),
+                KaoKeGrades = new List<int>()
             };
         }
     }
