@@ -315,13 +315,53 @@ namespace Lingyan.Game.UI
                     "Btn", c.L10n.Tr("study.marriage"),
                     () => { MarriageScreen.Reset(); c.GoMarriage(); }, 1.0f);
                 actionY = 0.725f;
+
+                // 防秋点兵（武线中期）：秋季应点出征，勋官轨由此积转
+                OfficeDef post = OfficialLadders.Get(save.Offices.ZhiShiId);
+                if (post != null && post.Line == CareerLine.Military)
+                {
+                    UiKit.TextButton(UiKit.At(root, "BtnFangQiu", 0.94f, actionY, 220, 50),
+                        "Btn", c.L10n.Tr("career.fangqiu"),
+                        () => RunFangQiu(c, save, now), 1.0f);
+                    actionY -= 0.05f;
+                }
             }
             // （胡商纳资虚衔：无职事无考课，actionY 停在 0.875）
+
+            // 遣商队（商线中期）：市籍是限也是本钱——丝路月贸吃江湖名望
+            if (ProtagonistCatalog.GetByKey(save.ProtagonistKey).Line == CareerLine.Trade)
+            {
+                UiKit.TextButton(UiKit.At(root, "BtnCaravan", 0.94f, actionY, 220, 50),
+                    "Btn", c.L10n.Tr("career.caravan"),
+                    () => RunCaravan(c, save, now), 1.0f);
+                actionY -= 0.05f;
+            }
 
             // 诣铜匦（垂拱二年立于朝堂，四匦受天下投书；白身官身皆可诣）
             UiKit.TextButton(UiKit.At(root, "BtnTongGui", 0.94f, actionY, 220, 50),
                 "Btn", c.L10n.Tr("study.tonggui"),
                 () => { _tongguiMode = true; c.GoStudy(save); }, 1.0f);
+        }
+
+        private static void RunCaravan(GameController c, SaveData save, TangDate now)
+        {
+            int year = EraTable.ToGregorianYear(save.Date.EraId, save.Date.EraYear);
+            Lingyan.Core.Economy.CaravanResult result =
+                Lingyan.Core.Economy.CaravanService.Dispatch(
+                    save, year * 100 + save.Date.Month);
+            if (result.Dispatched)
+            {
+                bool en = c.L10n.Locale == Locale.En;
+                var profit = new Money(result.ProfitWen);
+                _noticeText = c.L10n.TrF("caravan.result.ok",
+                    en ? profit.ToEn() : profit.ToZh());
+                c.AutoSave();
+            }
+            else
+            {
+                _noticeText = c.L10n.Tr(result.TextKey);
+            }
+            c.GoStudy(save);
         }
 
         /// <summary>四匦选择列（替换仕途动作列呈现）。</summary>
@@ -351,6 +391,38 @@ namespace Lingyan.Game.UI
             UiKit.TextButton(UiKit.At(root, "GuiBack", 0.94f, y, 220, 50),
                 "Btn", c.L10n.Tr("creation.back"),
                 () => { _tongguiMode = false; c.GoStudy(save); }, 1.0f);
+        }
+
+        private static void RunFangQiu(GameController c, SaveData save, TangDate now)
+        {
+            int year = EraTable.ToGregorianYear(save.Date.EraId, save.Date.EraYear);
+            FangQiuResult result = FangQiuService.Go(save, year);
+            if (result.Went)
+            {
+                if (result.MinWangDelta != 0)
+                {
+                    Lingyan.Core.Social.OutcomeApplier.ApplyReputation(save,
+                        Lingyan.Core.Reputation.ReputationTrack.MinWang,
+                        result.MinWangDelta, "rep.src.fangqiu", now);
+                }
+                if (result.JiangHuDelta != 0)
+                {
+                    Lingyan.Core.Social.OutcomeApplier.ApplyReputation(save,
+                        Lingyan.Core.Reputation.ReputationTrack.JiangHu,
+                        result.JiangHuDelta, "rep.src.fangqiu", now);
+                }
+                XunGuanDef xun = XunGuanTable.ForZhuan(save.Offices.XunZhuan);
+                bool en = c.L10n.Locale == Locale.En;
+                _noticeText = c.L10n.Tr(result.TextKey) + "　" + c.L10n.TrF(
+                    "fangqiu.xun_line", result.ZhuanGained,
+                    xun == null ? "—" : (en ? xun.En : xun.Zh), save.Offices.XunZhuan);
+                c.AutoSave();
+            }
+            else
+            {
+                _noticeText = c.L10n.Tr(result.TextKey);
+            }
+            c.GoStudy(save);
         }
 
         private static void SubmitTongGui(
