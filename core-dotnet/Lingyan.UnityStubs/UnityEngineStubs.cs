@@ -14,6 +14,14 @@ namespace UnityEngine
         {
             return Array.Empty<T>();
         }
+        public static T Instantiate<T>(T original, Transform parent) where T : Object
+        {
+            return original;
+        }
+        public static T Instantiate<T>(T original) where T : Object
+        {
+            return original;
+        }
     }
 
     public enum FindObjectsSortMode { None = 0, InstanceID = 1 }

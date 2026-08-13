@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""程序化唐构大殿精模（Blender 4.x, headless）。
+"""程序化唐构资产管线（Blender 4.x, headless）。
 
 用法:
-    blender -b -P tools/blender/tang_hall.py -- --out artifacts/blender-preview
+    # 渲染预览（大殿三机位）
+    blender -b -P tools/blender/tang_hall.py -- --render artifacts/blender-preview
+    # 导出 Unity 资产（五变体 FBX）
+    blender -b -P tools/blender/tang_hall.py -- --export LingyanUnity/Assets/Resources/Models
 
 与 LingyanUnity/Assets/Scripts/Core/Architecture/TangArchitectureSpec.cs 同步的红线：
-    举高/进深 = 1/6（举折凹曲，檐缓脊陡）
-    出檐/柱高 = 0.55
-    铺作层高/柱高 = 0.5
-    鸱尾：卷尾鳍形、有肋、无兽头（早唐至盛唐形制）
-形制参照：佛光寺东大殿、南禅寺大殿（悬山三间试制；庑殿四阿留待下版）。
+    举高/进深 = 1/6（举折凹曲，檐缓脊陡）；出檐/柱高 = 0.55；铺作层高/柱高 = 0.5；
+    鸱尾：卷尾鳍形、有肋、无兽头（早唐至盛唐形制）。
+形制参照：佛光寺东大殿、南禅寺大殿。
 """
 import math
 import os
@@ -24,38 +25,42 @@ RISE_PER_DEPTH = 1.0 / 6.0
 EAVE_PER_COL = 0.55
 BRACKET_PER_COL = 0.50
 
-# ---------------- 尺寸（米，Blender Z 朝上） ----------------
-W = 9.0        # 面阔（x）
-D = 6.0        # 进深（y）
-CH = 3.6       # 柱高
-PLINTH_H = 0.55
-GABLE_OVERHANG = 1.0   # 悬山出际
+# ---------------- 当前构件尺寸（set_dims 重算派生量） ----------------
+W = D = CH = PLINTH_H = GABLE_OVERHANG = 0.0
+EAVE = BRACKET_H = RISE = BASE_TOP = COL_TOP = EAVE_Y = HALF_SPAN = ROOF_W = 0.0
 
-EAVE = CH * EAVE_PER_COL
-BRACKET_H = CH * BRACKET_PER_COL
-RISE = D * RISE_PER_DEPTH
 
-BASE_TOP = PLINTH_H
-COL_TOP = BASE_TOP + CH
-EAVE_Y = COL_TOP + BRACKET_H          # 檐口标高（铺作层顶）
-HALF_SPAN = D / 2.0 + EAVE            # 檐口至脊的水平半跨
-ROOF_W = W + GABLE_OVERHANG * 2.0
+def set_dims(w, d, ch, plinth=0.55, gable=1.0):
+    global W, D, CH, PLINTH_H, GABLE_OVERHANG
+    global EAVE, BRACKET_H, RISE, BASE_TOP, COL_TOP, EAVE_Y, HALF_SPAN, ROOF_W
+    W, D, CH, PLINTH_H, GABLE_OVERHANG = w, d, ch, plinth, gable
+    EAVE = CH * EAVE_PER_COL
+    BRACKET_H = CH * BRACKET_PER_COL
+    RISE = D * RISE_PER_DEPTH
+    BASE_TOP = PLINTH_H
+    COL_TOP = BASE_TOP + CH
+    EAVE_Y = COL_TOP + BRACKET_H
+    HALF_SPAN = D / 2.0 + EAVE
+    ROOF_W = W + GABLE_OVERHANG * 2.0
+
+
+set_dims(9.0, 6.0, 3.6)
+
+PROFILE_STEPS = 9
 
 # ---------------- 材质 ----------------
 _mats = {}
 
 
 def mat(name, rgb, rough=0.85, tint=0.0):
-    key = name
-    if key in _mats:
-        return _mats[key]
+    if name in _mats:
+        return _mats[name]
     m = bpy.data.materials.new(name)
     m.use_nodes = True
     bsdf = m.node_tree.nodes["Principled BSDF"]
     bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
     bsdf.inputs["Roughness"].default_value = rough
     if tint > 0:
-        # 每物体随机明度差，瓦垄不至于死板
         nodes = m.node_tree.nodes
         links = m.node_tree.links
         info = nodes.new("ShaderNodeObjectInfo")
@@ -64,7 +69,7 @@ def mat(name, rgb, rough=0.85, tint=0.0):
         ramp.color_ramp.elements[1].color = (*[min(1, c * (1 + tint)) for c in rgb], 1)
         links.new(info.outputs["Random"], ramp.inputs["Fac"])
         links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
-    _mats[key] = m
+    _mats[name] = m
     return m
 
 
@@ -94,6 +99,10 @@ def m_stone():
 
 def m_door():
     return mat("door", (0.26, 0.185, 0.125), 0.78)
+
+
+def m_earth():
+    return mat("earth", (0.560, 0.470, 0.340), 0.95)
 
 
 def m_ground():
@@ -139,28 +148,20 @@ def mesh_from_pydata(name, verts, faces, material, smooth=False):
     return ob
 
 
-# ---------------- 举折屋面剖面 ----------------
-
 def roof_profile(t):
-    """t: 0=脊 → 1=檐。返回 (水平距, 相对檐口的高度)。
-    举折：凹曲屋面，近脊陡、近檐缓（唐制观感的关键一笔）。"""
+    """t: 0=脊 → 1=檐。举折凹曲：近脊陡、近檐缓。"""
     y = HALF_SPAN * t
     z = RISE * (1.0 - t) ** 1.45
     return y, z
 
 
-PROFILE_STEPS = 9
-
-
-# ---------------- 构件 ----------------
+# ---------------- 大木作构件 ----------------
 
 def build_plinth():
     add_box("plinth", (W + 2.2, D + 2.2, PLINTH_H - 0.012),
             (0, 0, (PLINTH_H - 0.012) / 2), m_stone(), bevel=0.03)
-    # 阶沿压边（顶面略高，避免与台基顶共面）
     add_box("plinth_edge", (W + 2.35, D + 2.35, 0.12),
             (0, 0, PLINTH_H - 0.054), m_stone(), bevel=0.02)
-    # 南向踏道三级
     for i in range(3):
         add_box(f"step{i}", (2.4, 0.42, PLINTH_H / 3),
                 (0, -(D + 2.2) / 2 - 0.21 - i * 0.42,
@@ -173,17 +174,16 @@ def column_xs():
 
 
 def build_columns():
-    r = CH * 0.072  # 柱径约 1/7 柱高，唐柱粗壮
+    r = CH * 0.072
     for x in column_xs():
         for ys in (-1, 1):
             y = ys * D / 2
             ob = add_cylinder("column", r, CH, (x, y, BASE_TOP + CH / 2),
                               m_timber(), verts=28)
-            # 卷杀：柱上段渐收
             bm = bmesh.new()
             bm.from_mesh(ob.data)
             for v in bm.verts:
-                zt = (v.co.z + CH / 2) / CH  # 0 底 → 1 顶
+                zt = (v.co.z + CH / 2) / CH
                 if zt > 0.62:
                     k = 1.0 - 0.10 * ((zt - 0.62) / 0.38) ** 1.6
                     v.co.x *= k
@@ -192,7 +192,6 @@ def build_columns():
             bm.free()
             for p in ob.data.polygons:
                 p.use_smooth = True
-            # 覆盆柱础
             add_cylinder("col_base", r * 1.55, 0.14,
                          (x, y, BASE_TOP + 0.07), m_stone(), verts=28)
             add_cylinder("col_base2", r * 1.25, 0.10,
@@ -208,31 +207,24 @@ def build_lintels():
 
 
 def build_bracket_set(x, ys):
-    """一攒铺作：栌斗+两跳华拱+下昂+令拱+散斗。ys=±1 檐向。"""
     y0 = ys * D / 2
     z0 = COL_TOP
-    g = bpy.data.collections.get("brackets")
 
     def bx(name, size, loc, material=None, rot=(0, 0, 0)):
         return add_box(name, size, loc, material or m_timber(), bevel=0.018, rot=rot)
 
-    # 栌斗（斗形：上大下小两段）
     bx("ludou_a", (0.44, 0.44, 0.14), (x, y0, z0 + 0.07))
     bx("ludou_b", (0.34, 0.34, 0.12), (x, y0, z0 + 0.18))
-    # 华拱两跳（沿檐向外伸，跳长收紧）
     bx("huagong1", (0.24, 0.72, 0.16), (x, y0 + ys * 0.15, z0 + 0.33))
     bx("huagong2", (0.24, 1.15, 0.16), (x, y0 + ys * 0.34, z0 + 0.62))
-    # 交互斗
     for dy, dz in ((0.36, 0.48), (0.62, 0.77)):
         bx("jiaohudou", (0.26, 0.26, 0.10), (x, y0 + ys * dy, z0 + dz))
-    # 下昂：斜杆（琴面以端部斜切近似），昂尖出檐下、昂身醒目
     ang_len = EAVE * 1.05
     pitch = math.radians(23)
     cy = y0 + ys * ang_len * 0.34
     cz = z0 + BRACKET_H * 0.50 - math.sin(pitch) * ang_len * 0.20
     bx("xiaang", (0.17, ang_len, 0.12), (x, cy, cz), m_timber_dark(),
        rot=(ys * pitch, 0, 0))
-    # 令拱（面阔向）与散斗
     bx("linggong", (0.95, 0.20, 0.15), (x, y0 + ys * 0.34, z0 + 0.90))
     for dx in (-0.38, 0.38):
         bx("sandou", (0.22, 0.22, 0.10), (x + dx, y0 + ys * 0.34, z0 + 1.02))
@@ -244,26 +236,24 @@ def build_brackets():
     for x in pu_xs:
         for ys in (-1, 1):
             build_bracket_set(x, ys)
-    # 拱眼壁（攒间白灰，退到攒身之后）
     for ys in (-1, 1):
         add_box("gongyan", (W + 0.3, 0.14, BRACKET_H * 0.58),
                 (0, ys * (D / 2 - 0.16), COL_TOP + BRACKET_H * 0.42), m_wall(),
                 bevel=0.0)
-    # 通长素枋两道：把攒串成一层"铺作"，不再是漂浮积木
-    for ys in (-1, 1):
         add_box("zhengxinfang", (W + 0.6, 0.22, 0.14),
                 (0, ys * D / 2, COL_TOP + 0.50), m_timber())
         add_box("luohanfang", (W + 0.6, 0.20, 0.13),
                 (0, ys * (D / 2 + 0.34), COL_TOP + 1.14), m_timber())
-    # 檐檩
-    for ys in (-1, 1):
         add_cylinder("purlin", 0.11, ROOF_W - 0.4,
                      (0, ys * (D / 2 + EAVE * 0.30), COL_TOP + BRACKET_H - 0.06),
                      m_timber(), rot=(0, math.pi / 2, 0))
+    for xsn in (-1, 1):
+        for z in (-D / 6, D / 6):
+            add_box("bracket_side", (0.34, 0.42, BRACKET_H * 0.6),
+                    (xsn * W / 2, z, COL_TOP + BRACKET_H * 0.3), m_timber_dark())
 
 
 def build_rafters():
-    """檐椽：沿屋面最下段坡度，自铺作层内侧伸出檐口之下。"""
     step = 0.34
     n = int(ROOF_W / step)
     y_in, z_in = roof_profile(0.62)
@@ -282,7 +272,6 @@ def build_rafters():
 
 
 def roof_slope_mesh(ys):
-    """一坡望板：举折凹曲网格（ys=-1 前坡 / +1 后坡）。"""
     verts, faces = [], []
     nx = 12
     for j in range(PROFILE_STEPS + 1):
@@ -298,7 +287,7 @@ def roof_slope_mesh(ys):
             c = a + (nx + 1) + 1
             d = a + (nx + 1)
             faces.append((a, b, c, d) if ys > 0 else (a, d, c, b))
-    ob = mesh_from_pydata(f"roof_deck_{'b' if ys>0 else 'f'}", verts, faces,
+    ob = mesh_from_pydata(f"roof_deck_{'b' if ys > 0 else 'f'}", verts, faces,
                           m_tile(), smooth=True)
     mod = ob.modifiers.new("sol", "SOLIDIFY")
     mod.thickness = 0.10
@@ -306,15 +295,13 @@ def roof_slope_mesh(ys):
 
 
 def tile_run_curve(ys, x):
-    """一垄筒瓦：沿举折剖面的圆管曲线。"""
     cu = bpy.data.curves.new("tile_run", "CURVE")
     cu.dimensions = "3D"
     cu.bevel_depth = 0.072
-    cu.bevel_resolution = 3
+    cu.bevel_resolution = 2
     sp = cu.splines.new("POLY")
     sp.points.add(PROFILE_STEPS)
     for j in range(PROFILE_STEPS + 1):
-        # 自 t=0.05 起，脊端留给正脊压盖，垄头不穿脊
         t = 0.05 + 0.95 * j / PROFILE_STEPS
         y, z = roof_profile(t)
         sp.points[j].co = (x, ys * (y + (0.10 if j == PROFILE_STEPS else 0.0)),
@@ -328,13 +315,11 @@ def tile_run_curve(ys, x):
 def build_roof():
     for ys in (-1, 1):
         roof_slope_mesh(ys)
-        # 筒瓦垄（更密更细，读出真瓦面）
         step = 0.44
         n = int((ROOF_W - 0.5) / step)
         for i in range(n + 1):
             x = -(ROOF_W - 0.5) / 2 + (ROOF_W - 0.5) * i / n
             tile_run_curve(ys, x)
-            # 瓦当（檐口圆盘）
             y_edge, z_edge = roof_profile(1.0)
             pitch = math.atan2(
                 roof_profile(0.85)[1] - z_edge, (1 - 0.85) * HALF_SPAN)
@@ -343,7 +328,6 @@ def build_roof():
                          m_ridge(), verts=16,
                          rot=(ys * (math.pi / 2 - pitch), 0, 0))
 
-    # 正脊：两层叠瓦 + 顶部圆脊筒，端部止于鸱尾之内
     ridge_len = (ROOF_W / 2 - 0.55) * 2 - 0.15
     add_box("ridge0", (ridge_len, 0.52, 0.15),
             (0, 0, EAVE_Y + RISE + 0.10), m_ridge(), bevel=0.02)
@@ -353,12 +337,11 @@ def build_roof():
                  (0, 0, EAVE_Y + RISE + 0.36), m_ridge(),
                  verts=20, rot=(0, math.pi / 2, 0))
     build_bofeng()
-    build_chiwei(-1)
-    build_chiwei(1)
+    build_chiwei(-1, ROOF_W / 2 - 0.55, EAVE_Y + RISE + 0.06, CH * 0.55)
+    build_chiwei(1, ROOF_W / 2 - 0.55, EAVE_Y + RISE + 0.06, CH * 0.55)
 
 
 def build_bofeng():
-    """博风板：悬山山面沿坡缘的护板（跟随举折曲线的短板带）。"""
     seg = 8
     for xsn in (-1, 1):
         for ys in (-1, 1):
@@ -378,7 +361,7 @@ def build_bofeng():
 
 
 def chiwei_profile(h):
-    """鸱尾轮廓（与 C# ChiweiProfile 同构）：卷尾鳍，无兽头。XY→(x,z)。"""
+    """鸱尾轮廓 v2：卷首加深的尾鳍，无兽头。与 C# ChiweiProfile 同步。"""
     w = h * 0.52
 
     def bez(a, b, c, t):
@@ -387,20 +370,21 @@ def chiwei_profile(h):
 
     pts = [(w * 0.95, 0.0), (w * 0.95, h * 0.14)]
     steps = 9
+    # 外缘大弧：基座外沿 → 顶
     for i in range(1, steps + 1):
         t = i / steps
-        pts.append((bez(w * 0.95, w * 1.02, w * 0.34, t),
-                    bez(h * 0.14, h * 0.72, h, t)))
+        pts.append((bez(w * 0.95, w * 1.04, w * 0.30, t),
+                    bez(h * 0.14, h * 0.74, h, t)))
+    # 卷首：更大的内卷弧，钩尖收到内下方
     for i in range(1, steps + 1):
         t = i / steps
-        pts.append((bez(w * 0.34, w * 0.10, w * 0.22, t),
-                    bez(h, h * 0.97, h * 0.80, t)))
-    pts += [(w * 0.16, h * 0.55), (0.0, h * 0.10), (0.0, 0.0)]
+        pts.append((bez(w * 0.30, w * 0.02, w * 0.24, t),
+                    bez(h, h * 0.98, h * 0.72, t)))
+    pts += [(w * 0.14, h * 0.50), (0.0, h * 0.10), (0.0, 0.0)]
     return pts
 
 
-def build_chiwei(xs):
-    h = CH * 0.55
+def build_chiwei(xs, ridge_half, base_z, h):
     prof = chiwei_profile(h)
     thick = 0.20
     verts, faces = [], []
@@ -414,11 +398,9 @@ def build_chiwei(xs):
     for i in range(n):
         j = (i + 1) % n
         faces.append((i, j, n + j, n + i))
-    base_x = xs * (ROOF_W / 2 - 0.55)
-    base_z = EAVE_Y + RISE + 0.06
+    base_x = xs * ridge_half
     ob = mesh_from_pydata("chiwei", verts, faces, m_ridge())
     ob.location = (base_x, 0, base_z)
-    # 肋纹：三条沿外缘走向的斜棱，贴在轮廓面上（不是浮块）
     outer = [prof[3], prof[6], prof[9]]
     inner_dir = (prof[12][0] - prof[6][0], prof[12][1] - prof[6][1])
     norm = math.hypot(*inner_dir)
@@ -431,47 +413,6 @@ def build_chiwei(xs):
         add_box("chiwei_rib", (rib_len, thick + 0.05, 0.055),
                 (base_x + xs * cx, 0, base_z + cz),
                 m_ridge(), bevel=0.01, rot=(0, -angle, 0))
-
-
-def build_walls_and_openings():
-    wall_t = 0.26
-    wall_h = CH - 0.1
-    zc = BASE_TOP + wall_h / 2
-    # 后墙
-    add_box("wall_back", (W - 0.3, wall_t, wall_h), (0, D / 2 - 0.22, zc), m_wall(), 0.0)
-    # 山墙：一直封到檐口标高（连铺作层侧面一起），山尖再封到脊下
-    gable_h = EAVE_Y - BASE_TOP - 0.04
-    for xsn in (-1, 1):
-        add_box("wall_gable", (wall_t, D - 0.3, gable_h),
-                (xsn * (W / 2 - 0.18), 0, BASE_TOP + gable_h / 2), m_wall(), 0.0)
-        verts = [(0, -D / 2 + 0.10, EAVE_Y - 0.05),
-                 (0, D / 2 - 0.10, EAVE_Y - 0.05),
-                 (0, 0, EAVE_Y + RISE * 0.90)]
-        ob = mesh_from_pydata("gable_tri", verts, [(0, 1, 2)], m_wall())
-        ob.location.x = xsn * (W / 2 - 0.18)
-        mod = ob.modifiers.new("sol", "SOLIDIFY")
-        mod.thickness = wall_t
-    # 前墙两段 + 直棂窗
-    door_w, door_h = 1.7, 2.3
-    seg_w = (W - 0.3 - door_w) / 2
-    for xsn in (-1, 1):
-        cx = xsn * (door_w / 2 + seg_w / 2)
-        add_box("wall_front", (seg_w, wall_t, wall_h),
-                (cx, -D / 2 + 0.22, zc), m_wall(), 0.0)
-        build_lattice_window(cx, -D / 2 + 0.22 - 0.16, BASE_TOP + CH * 0.55)
-    add_box("wall_overdoor", (door_w + 0.2, wall_t, wall_h - door_h),
-            (0, -D / 2 + 0.22, BASE_TOP + door_h + (wall_h - door_h) / 2), m_wall(), 0.0)
-    # 板门两扇 + 门钉
-    for xsn in (-1, 1):
-        add_box("door_leaf", (door_w / 2 - 0.03, 0.10, door_h),
-                (xsn * door_w / 4, -D / 2 + 0.12, BASE_TOP + door_h / 2), m_door())
-        for r in range(4):
-            for c in range(3):
-                add_cylinder("door_nail", 0.028, 0.03,
-                             (xsn * (door_w / 4 - 0.24 + c * 0.24),
-                              -D / 2 + 0.06,
-                              BASE_TOP + 0.45 + r * 0.52),
-                             m_ridge(), verts=10, rot=(math.pi / 2, 0, 0))
 
 
 def build_lattice_window(cx, y, cz):
@@ -491,14 +432,150 @@ def build_lattice_window(cx, y, cz):
                 (cx + ox, y, cz), m_door(), bevel=0.008)
 
 
+def build_walls_and_openings(door_w=1.7, door_h=2.3, windows=True):
+    wall_t = 0.26
+    wall_h = CH - 0.1
+    zc = BASE_TOP + wall_h / 2
+    add_box("wall_back", (W - 0.3, wall_t, wall_h), (0, D / 2 - 0.22, zc), m_wall(), 0.0)
+    gable_h = EAVE_Y - BASE_TOP - 0.04
+    for xsn in (-1, 1):
+        add_box("wall_gable", (wall_t, D - 0.3, gable_h),
+                (xsn * (W / 2 - 0.18), 0, BASE_TOP + gable_h / 2), m_wall(), 0.0)
+        verts = [(0, -D / 2 + 0.10, EAVE_Y - 0.05),
+                 (0, D / 2 - 0.10, EAVE_Y - 0.05),
+                 (0, 0, EAVE_Y + RISE * 0.90)]
+        ob = mesh_from_pydata("gable_tri", verts, [(0, 1, 2)], m_wall())
+        ob.location.x = xsn * (W / 2 - 0.18)
+        mod = ob.modifiers.new("sol", "SOLIDIFY")
+        mod.thickness = wall_t
+    seg_w = (W - 0.3 - door_w) / 2
+    for xsn in (-1, 1):
+        cx = xsn * (door_w / 2 + seg_w / 2)
+        add_box("wall_front", (seg_w, wall_t, wall_h),
+                (cx, -D / 2 + 0.22, zc), m_wall(), 0.0)
+        if windows:
+            build_lattice_window(cx, -D / 2 + 0.22 - 0.16, BASE_TOP + CH * 0.55)
+    add_box("wall_overdoor", (door_w + 0.2, wall_t, wall_h - door_h),
+            (0, -D / 2 + 0.22, BASE_TOP + door_h + (wall_h - door_h) / 2), m_wall(), 0.0)
+    for xsn in (-1, 1):
+        add_box("door_leaf", (door_w / 2 - 0.03, 0.10, door_h),
+                (xsn * door_w / 4, -D / 2 + 0.12, BASE_TOP + door_h / 2), m_door())
+        for r in range(4):
+            for c in range(3):
+                add_cylinder("door_nail", 0.028, 0.03,
+                             (xsn * (door_w / 4 - 0.24 + c * 0.24),
+                              -D / 2 + 0.06,
+                              BASE_TOP + 0.45 + r * 0.52),
+                             m_ridge(), verts=10, rot=(math.pi / 2, 0, 0))
+
+
+def build_hall(w, d, ch, door_w=1.7, windows=True):
+    set_dims(w, d, ch)
+    build_plinth()
+    build_columns()
+    build_lintels()
+    build_brackets()
+    build_rafters()
+    build_roof()
+    build_walls_and_openings(door_w=door_w, windows=windows)
+
+
+# ---------------- 门楼与井亭 ----------------
+
+def small_roof(width, depth, base_z, rise, tile_step=0.5, thick=0.10):
+    """小型两坡屋面（门楼/井亭用）：直坡+瓦垄+脊。"""
+    half = depth / 2
+    slope_len = math.hypot(half, rise) + 0.15
+    pitch = math.atan2(rise, half)
+    for ys in (-1, 1):
+        add_box("sroof", (width, slope_len, thick),
+                (0, ys * half / 2, base_z + rise / 2),
+                m_tile(), bevel=0.015, rot=(ys * -pitch, 0, 0))
+        n = int(width / tile_step)
+        span = width - 0.3
+        for i in range(n + 1):
+            x = -span / 2 + span * i / n
+            add_cylinder("sroof_tile", 0.06, slope_len - 0.05,
+                         (x, ys * half / 2, base_z + rise / 2 + thick * 0.8),
+                         m_tile(), verts=10, rot=(ys * -pitch + math.pi / 2, 0, 0))
+    add_box("sroof_ridge", (width - 0.1, 0.30, 0.13),
+            (0, 0, base_z + rise + 0.07), m_ridge(), bevel=0.015)
+    add_cylinder("sroof_cap", 0.10, width - 0.2,
+                 (0, 0, base_z + rise + 0.17), m_ridge(),
+                 verts=16, rot=(0, math.pi / 2, 0))
+
+
+def build_gate():
+    """坊门楼：门墩、过梁、小屋面带鸱尾、独立铰点门扇（GateLeaf_L/R）。"""
+    for xsn in (-1, 1):
+        add_box("gate_pier", (2.6, 1.9, 3.6), (xsn * 4.2, 0, 1.8),
+                m_earth(), bevel=0.03)
+        add_box("gate_pier_cap", (2.8, 2.1, 0.18), (xsn * 4.2, 0, 3.66),
+                m_tile(), bevel=0.02)
+    add_box("gate_lintel", (11.6, 1.9, 0.7), (0, 0, 4.05), m_timber(), bevel=0.03)
+    # 檐下小铺作意象
+    for x in (-3.4, 0, 3.4):
+        add_box("gate_dou", (0.4, 0.4, 0.14), (x, 0, 4.47), m_timber())
+        add_box("gate_gong", (1.0, 0.5, 0.14), (x, 0, 4.62), m_timber())
+    small_roof(12.6, 2.9, 4.75, 0.55)
+    for xsn in (-1, 1):
+        build_chiwei(xsn, 6.0, 5.35, 0.85)
+    # 门扇：原点在铰边（Unity 里旋转即开闭）
+    for xsn in (-1, 1):
+        name = "GateLeaf_L" if xsn < 0 else "GateLeaf_R"
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(xsn * 2.9, 0, 0))
+        leaf = bpy.context.object
+        leaf.name = name
+        leaf.scale = (2.9, 0.16, 3.4)
+        bpy.ops.object.transform_apply(scale=True)
+        # 把网格移到铰点一侧：物体原点保持在铰线上
+        bm = bmesh.new()
+        bm.from_mesh(leaf.data)
+        for v in bm.verts:
+            v.co.x -= xsn * 1.45
+            v.co.z += 1.7
+        bm.to_mesh(leaf.data)
+        bm.free()
+        leaf.data.materials.append(m_door())
+        # 门钉
+        for r in range(4):
+            for c in range(4):
+                add_cylinder("gate_nail", 0.045, 0.05,
+                             (xsn * (0.5 + c * 0.62), -0.10, 0.6 + r * 0.72),
+                             m_ridge(), verts=10, rot=(math.pi / 2, 0, 0))
+
+
+def build_well():
+    """井亭：石井圈、口沿、四柱、小两坡顶。"""
+    add_cylinder("well_ring", 0.62, 0.9, (0, 0, 0.45), m_stone(), verts=28)
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=0.56, minor_radius=0.07, location=(0, 0, 0.90))
+    torus = bpy.context.object
+    torus.name = "well_rim"
+    torus.data.materials.append(m_stone())
+    add_cylinder("well_mouth", 0.45, 0.06, (0, 0, 0.92),
+                 mat("well_dark", (0.06, 0.06, 0.07), 0.9), verts=24)
+    for x, y in ((-0.95, -0.95), (-0.95, 0.95), (0.95, -0.95), (0.95, 0.95)):
+        add_cylinder("well_col", 0.10, 2.5, (x, y, 1.25), m_timber(), verts=16)
+    for ys in (-1, 1):
+        add_box("well_fang", (2.4, 0.14, 0.16), (0, ys * 0.95, 2.45), m_timber())
+    small_roof(3.0, 2.6, 2.55, 0.42, tile_step=0.42, thick=0.08)
+
+
+# ---------------- 环境 / 相机 / 渲染 ----------------
+
+def clear_scene():
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete()
+    _mats.clear()
+
+
 def build_ground():
     bpy.ops.mesh.primitive_plane_add(size=420, location=(0, 0, 0))
     ob = bpy.context.object
     ob.name = "ground"
     ob.data.materials.append(m_ground())
 
-
-# ---------------- 环境 / 相机 / 渲染 ----------------
 
 def setup_world():
     sun = bpy.data.lights.new("sun", "SUN")
@@ -523,7 +600,6 @@ def setup_world():
     bg.inputs["Strength"].default_value = 0.22
     links.new(sky.outputs["Color"], bg.inputs["Color"])
 
-    # 曝光与视图变换：Filmic 保色相，压回被 AgX 洗白的问题
     scene = bpy.context.scene
     scene.view_settings.view_transform = "Filmic"
     scene.view_settings.look = "Medium High Contrast"
@@ -546,7 +622,7 @@ def render(cam, path, w=1600, h=900, samples=224):
     scene.camera = cam
     scene.render.engine = "CYCLES"
     scene.cycles.samples = samples
-    scene.cycles.use_denoising = False  # apt 版 Blender 未编 OIDN，靠采样压噪
+    scene.cycles.use_denoising = False
     scene.render.resolution_x = w
     scene.render.resolution_y = h
     scene.render.filepath = path
@@ -554,38 +630,58 @@ def render(cam, path, w=1600, h=900, samples=224):
     print("[tang_hall] 渲染:", path)
 
 
+def export_fbx(path):
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.export_scene.fbx(
+        filepath=path,
+        use_selection=True,
+        apply_scale_options="FBX_SCALE_ALL",
+        axis_forward="-Z",
+        axis_up="Y",
+        use_mesh_modifiers=True,
+        bake_space_transform=True,
+        path_mode="STRIP",
+        add_leaf_bones=False)
+    print("[tang_hall] 导出:", path)
+
+
+ASSETS = {
+    "tang_hall_large": lambda: build_hall(9.0, 6.0, 3.6),
+    "tang_hall_small": lambda: build_hall(6.0, 4.5, 3.0, door_w=1.4),
+    "tang_hall_post": lambda: build_hall(4.5, 3.5, 2.8, door_w=1.2, windows=False),
+    "tang_gate": build_gate,
+    "tang_well": build_well,
+}
+
+
 def main():
+    mode = "--render"
     out_dir = "artifacts/blender-preview"
     if "--" in sys.argv:
         args = sys.argv[sys.argv.index("--") + 1:]
-        for i, a in enumerate(args):
-            if a == "--out" and i + 1 < len(args):
-                out_dir = args[i + 1]
+        if args:
+            mode = args[0]
+        if len(args) > 1:
+            out_dir = args[1]
     os.makedirs(out_dir, exist_ok=True)
 
-    # 清场
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.object.delete()
+    if mode == "--export":
+        for name, builder in ASSETS.items():
+            clear_scene()
+            builder()
+            export_fbx(os.path.join(out_dir, name + ".fbx"))
+        return
 
+    clear_scene()
     build_ground()
-    build_plinth()
-    build_columns()
-    build_lintels()
-    build_brackets()
-    build_rafters()
-    build_roof()
-    build_walls_and_openings()
+    build_hall(9.0, 6.0, 3.6)
     setup_world()
-
     cam1 = add_camera("cam_front", (15.5, -18.5, 7.0), (0, 0.4, 3.6), fov=36)
     cam2 = add_camera("cam_eave", (7.6, -9.2, 4.4), (2.0, -2.4, 5.4), fov=28)
     cam3 = add_camera("cam_ridge", (-11.5, -10.0, 9.6), (-3.6, 0.4, 6.2), fov=30)
-
     render(cam1, os.path.join(out_dir, "hall_front.png"))
     render(cam2, os.path.join(out_dir, "hall_eave.png"))
     render(cam3, os.path.join(out_dir, "hall_ridge.png"))
-
-    # 落一份 blend 供后续导出 FBX/glTF
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out_dir, "tang_hall.blend"))
 
 

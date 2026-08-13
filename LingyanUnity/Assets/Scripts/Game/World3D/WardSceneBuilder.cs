@@ -36,8 +36,9 @@ namespace Lingyan.Game.World3D
             bool gatesOpen = WardDef.GatesOpenAt(hourIndex);
             foreach (GameObject leaf in _gateLeaves)
             {
-                // 开门时门扇转贴门墩内侧，闭门时合拢堵住门洞
-                float sign = leaf.transform.localPosition.x < 0 ? 1f : -1f;
+                // 开门时门扇绕铰边转贴门墩内侧，闭门时合拢堵住门洞。
+                // 精模节点名 GateLeaf_L/R；程序化占位沿用同名约定。
+                float sign = leaf.name.Contains("_L") ? 1f : -1f;
                 leaf.transform.localRotation =
                     Quaternion.Euler(0f, gatesOpen ? sign * 80f : 0f, 0f);
             }
@@ -75,7 +76,6 @@ namespace Lingyan.Game.World3D
             MeshKit.Paint(ground, TangColors.Ground);
 
             BuildWalls(t);
-            List<GameObject> gateLeaves = BuildSouthGate(t);
 
             // 巷道：南门直抵北墙的主巷 + 十字支巷（黄土踩实的浅色便道）
             Color lane = new Color(0.62f, 0.56f, 0.45f);
@@ -84,15 +84,21 @@ namespace Lingyan.Game.World3D
             MeshKit.Box(t, "LaneCross", new Vector3(0f, 0.012f, 2f),
                 new Vector3(50f, 0.024f, 2.8f), lane);
 
-            // 三座屋：桓宅（大）、康家小院、武侯铺
-            TangHouseBuilder.Build(t, "House_Huan", new Vector3(-12f, 0f, 9f),
-                new TangHouseBuilder.Config { Width = 9f, Depth = 6f, ColumnHeight = 3.6f });
-            TangHouseBuilder.Build(t, "House_Kang", new Vector3(13f, 0f, 11f),
-                new TangHouseBuilder.Config { Width = 6f, Depth = 4.5f, ColumnHeight = 3.0f });
-            TangHouseBuilder.Build(t, "WuhouPost", new Vector3(8f, 0f, -15f),
-                new TangHouseBuilder.Config { Width = 4.5f, Depth = 3.5f, ColumnHeight = 2.8f });
+            // 建筑：优先 Blender 精模（tools/blender/tang_hall.py 导出），
+            // 缺资产时回退程序化占位并响亮报错——不许静默糊弄。
+            PlaceModelOrFallback(t, "tang_hall_large", new Vector3(-12f, 0f, 9f),
+                () => TangHouseBuilder.Build(t, "House_Huan", new Vector3(-12f, 0f, 9f),
+                    new TangHouseBuilder.Config { Width = 9f, Depth = 6f, ColumnHeight = 3.6f }));
+            PlaceModelOrFallback(t, "tang_hall_small", new Vector3(13f, 0f, 11f),
+                () => TangHouseBuilder.Build(t, "House_Kang", new Vector3(13f, 0f, 11f),
+                    new TangHouseBuilder.Config { Width = 6f, Depth = 4.5f, ColumnHeight = 3.0f }));
+            PlaceModelOrFallback(t, "tang_hall_post", new Vector3(8f, 0f, -15f),
+                () => TangHouseBuilder.Build(t, "WuhouPost", new Vector3(8f, 0f, -15f),
+                    new TangHouseBuilder.Config { Width = 4.5f, Depth = 3.5f, ColumnHeight = 2.8f }));
+            PlaceModelOrFallback(t, "tang_well", new Vector3(-3f, 0f, -3f),
+                () => BuildWellPavilion(t, new Vector3(-3f, 0f, -3f)));
 
-            BuildWellPavilion(t, new Vector3(-3f, 0f, -3f));
+            List<GameObject> gateLeaves = BuildGate(t);
 
             // 槐树
             var treeSpots = new[]
@@ -125,6 +131,56 @@ namespace Lingyan.Game.World3D
 
             var lightRig = new DayLightRig(t);
             return new WardScene(root, lightRig, anchors, markers, gateLeaves);
+        }
+
+        /// <summary>加载精模；缺失时回退程序化占位（Debug.LogError 明示，绝不静默）。</summary>
+        private static GameObject PlaceModelOrFallback(
+            Transform parent, string resource, Vector3 position, System.Action fallback)
+        {
+            GameObject prefab = Resources.Load<GameObject>("Models/" + resource);
+            if (prefab == null)
+            {
+                Debug.LogError("[Lingyan] 精模缺失: Resources/Models/" + resource
+                    + "，回退程序化占位");
+                fallback?.Invoke();
+                return null;
+            }
+            GameObject instance = Object.Instantiate(prefab, parent);
+            instance.name = resource;
+            instance.transform.localPosition = position;
+            instance.transform.localRotation = Quaternion.identity;
+            return instance;
+        }
+
+        /// <summary>南门楼：精模优先（门扇节点 GateLeaf_L/R），缺则程序化。</summary>
+        private static List<GameObject> BuildGate(Transform t)
+        {
+            GameObject gate = PlaceModelOrFallback(t, "tang_gate",
+                new Vector3(0f, 0f, -21f), null);
+            if (gate == null)
+            {
+                return BuildSouthGate(t);
+            }
+            var leaves = new List<GameObject>();
+            CollectLeaves(gate.transform, leaves);
+            if (leaves.Count != 2)
+            {
+                Debug.LogError("[Lingyan] 门楼精模缺门扇节点 GateLeaf_L/R，找到 "
+                    + leaves.Count + " 个");
+            }
+            return leaves;
+        }
+
+        private static void CollectLeaves(Transform node, List<GameObject> leaves)
+        {
+            if (node.name.Contains("GateLeaf"))
+            {
+                leaves.Add(node.gameObject);
+            }
+            for (int i = 0; i < node.childCount; i++)
+            {
+                CollectLeaves(node.GetChild(i), leaves);
+            }
         }
 
         private static void BuildWalls(Transform t)
@@ -213,7 +269,7 @@ namespace Lingyan.Game.World3D
             var leaves = new List<GameObject>();
             foreach (float xSign in new[] { -1f, 1f })
             {
-                var hinge = new GameObject(xSign < 0 ? "GateLeafL" : "GateLeafR");
+                var hinge = new GameObject(xSign < 0 ? "GateLeaf_L" : "GateLeaf_R");
                 hinge.transform.SetParent(g, false);
                 hinge.transform.localPosition = new Vector3(xSign * 2.9f, 0f, 0f);
                 MeshKit.Box(hinge.transform, "Leaf",
