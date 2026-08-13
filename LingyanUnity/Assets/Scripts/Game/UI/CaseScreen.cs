@@ -37,7 +37,7 @@ namespace Lingyan.Game.UI
             }
             UiKit.InkBackground(root);
 
-            CaseDef def = SilkCase.Def;
+            CaseDef def = CaseFlow.Current(save); // 案件按序流转（丝帛案→枯井案）
             var now = new TangDate(save.Date.EraId, save.Date.EraYear,
                 save.Date.Month, save.Date.Day, save.Date.HourIndex);
 
@@ -216,6 +216,28 @@ namespace Lingyan.Game.UI
                     if (!state.Clues.Contains("dossier"))
                     {
                         failKey = "case.fetch.need_dossier";
+                    }
+                    break;
+
+                // —— 枯井案 ——
+                case "bone_belt":
+                    break; // 淘井人呈上的现场遗物，接案即可取
+                case "well_ledger":
+                    if (NpcPanelRenderer.Fetch(c, "huan_fuzi").Total < 40)
+                    {
+                        failKey = "case.fetch.need_huan";
+                    }
+                    break;
+                case "missing_roll":
+                    if (!state.Clues.Contains("bone_belt"))
+                    {
+                        failKey = "case.fetch.need_bone";
+                    }
+                    break;
+                case "old_neighbor":
+                    if (NpcPanelRenderer.Fetch(c, "zheng_wu").Total < 45)
+                    {
+                        failKey = "case.fetch.need_zheng";
                     }
                     break;
             }

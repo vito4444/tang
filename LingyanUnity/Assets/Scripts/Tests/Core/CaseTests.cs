@@ -148,16 +148,18 @@ namespace Lingyan.Core.Tests
                 if (!catalog.Has(key)) { missing.Add(key); }
             }
 
-            CaseDef def = SilkCase.Def;
-            Check(def.TitleKey);
-            Check(def.BriefKey);
-            foreach (ClueDef clue in def.Clues)
+            foreach (CaseDef def in CaseFlow.All) // 案件量产纪律：新案入表即被巡检咬住
             {
-                Check(clue.Key);
-                Check(clue.HintKey);
+                Check(def.TitleKey);
+                Check(def.BriefKey);
+                foreach (ClueDef clue in def.Clues)
+                {
+                    Check(clue.Key);
+                    Check(clue.HintKey);
+                }
+                foreach (InferenceDef inference in def.Inferences) { Check(inference.Key); }
+                foreach (SuspectDef suspect in def.Suspects) { Check(suspect.NameKey); }
             }
-            foreach (InferenceDef inference in def.Inferences) { Check(inference.Key); }
-            foreach (SuspectDef suspect in def.Suspects) { Check(suspect.NameKey); }
             foreach (string outcome in new[]
             {
                 "case.outcome.expired", "case.outcome.forced_right", "case.outcome.forced_wrong",

@@ -155,9 +155,10 @@ namespace Lingyan.Game.UI
                 "Btn", c.L10n.Tr("study.go_out"),
                 () => c.GoWard(save), 1.15f);
 
-            // 案牍：听过丝帛案传闻才可接案；已接直接进线索板
-            bool caseOpen = save.Cases.ContainsKey(Lingyan.Core.Cases.SilkCase.CaseId);
-            bool heardCase = save.StoryFlags.TryGetValue("heard_silk_case", out bool heard) && heard;
+            // 案牍：案件按序流转（丝帛案→枯井案），门槛未达灰显
+            Lingyan.Core.Cases.CaseDef currentCase = Lingyan.Core.Cases.CaseFlow.Current(save);
+            bool caseOpen = save.Cases.ContainsKey(currentCase.Id);
+            bool canTake = Lingyan.Core.Cases.CaseFlow.CanOpen(save, currentCase);
             UiKit.TextButton(UiKit.At(root, "BtnCase", 0.66f, 0.075f, 320, 56),
                 "Btn", c.L10n.Tr(caseOpen ? "study.case_board" : "study.case_take"),
                 () =>
@@ -166,8 +167,7 @@ namespace Lingyan.Game.UI
                     {
                         var now = new TangDate(save.Date.EraId, save.Date.EraYear,
                             save.Date.Month, save.Date.Day, save.Date.HourIndex);
-                        Lingyan.Core.Cases.CaseService.Open(
-                            save, Lingyan.Core.Cases.SilkCase.Def, now);
+                        Lingyan.Core.Cases.CaseService.Open(save, currentCase, now);
                         Lingyan.Core.Terminology.CodexService.OnEvent(
                             save, Lingyan.Core.Terminology.CodexEvent.CaseOpened);
                         Lingyan.Core.Terminology.CodexService.OnEvent(
@@ -175,7 +175,7 @@ namespace Lingyan.Game.UI
                     }
                     CaseScreen.Reset();
                     c.GoCase();
-                }, 1.1f, caseOpen || heardCase);
+                }, 1.1f, caseOpen || canTake);
 
             UiKit.TextButton(UiKit.At(root, "BtnCodex", 0.845f, 0.075f, 200, 56),
                 "Btn", c.L10n.Tr("study.codex"),
@@ -354,9 +354,9 @@ namespace Lingyan.Game.UI
         {
             save.Counters.TryGetValue("merit_points", out int merit);
             save.Counters.TryGetValue("cases_closed", out int closed);
-            save.Cases.TryGetValue(Lingyan.Core.Cases.SilkCase.CaseId, out SaveCaseState silk);
             int opened = save.Cases.Count;
-            bool wrongful = silk != null && silk.WrongfulConviction;
+            // 冤案扫全部案卷（不再只看丝帛案）——一案含冤，考课"公平可称"即失
+            bool wrongful = save.Cases.Values.Any(cs => cs.WrongfulConviction);
 
             var input = new KaoKeInput
             {
