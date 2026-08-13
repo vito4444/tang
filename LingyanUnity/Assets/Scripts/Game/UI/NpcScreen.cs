@@ -160,7 +160,16 @@ namespace Lingyan.Game.UI
             float[] xs = { 0.155f, 0.385f, 0.615f, 0.845f };
 
             Btn(c, panel, xs[0], rowY1, "interact.greet",
-                () => Run(c, save, npcId, s => InteractionService.Greet(s, date)));
+                () =>
+                {
+                    // 有对话树走树（阶段 4），无树退回寒暄
+                    if (DialogueScreen.TryStart(c, npcId))
+                    {
+                        c.GoDialogue();
+                        return;
+                    }
+                    Run(c, save, npcId, s => InteractionService.Greet(s, date));
+                });
             Btn(c, panel, xs[1], rowY1, "interact.gift",
                 () => { _giftMode = true; c.GoNpc(npcId); });
             Btn(c, panel, xs[2], rowY1, "interact.ask",
@@ -194,7 +203,7 @@ namespace Lingyan.Game.UI
                 onClick, 1.0f, enabled);
         }
 
-        /// <summary>统一结算：好感入档、名誉入账、钱与通缉落存档，然后重建屏。</summary>
+        /// <summary>统一结算：好感入档、名誉/钱/通缉走 OutcomeApplier 单一口径，然后重建屏。</summary>
         private static void Run(
             GameController c, SaveData save, string npcId,
             Func<NpcState, InteractionResult> action)
@@ -203,32 +212,9 @@ namespace Lingyan.Game.UI
             InteractionResult result = action(state);
             NpcStateStore.Store(save, npcId, state);
 
-            if (result.ReputationDeltas.Count > 0)
-            {
-                var reputation = new ReputationState(
-                    save.Reputation.GuanSheng, save.Reputation.MinWang,
-                    save.Reputation.JiangHu);
-                var date = new TangDate(save.Date.EraId, save.Date.EraYear,
-                    save.Date.Month, save.Date.Day, save.Date.HourIndex);
-                foreach (var (track, delta, sourceKey) in result.ReputationDeltas)
-                {
-                    reputation.Apply(track, delta, sourceKey, date.ToStamp());
-                    save.ReputationLedger.Add(new SaveLedgerEntry
-                    {
-                        Track = track.ToString(),
-                        Delta = delta,
-                        SourceKey = sourceKey,
-                        DateStamp = date.ToStamp()
-                    });
-                }
-                save.Reputation.GuanSheng = reputation.GuanSheng;
-                save.Reputation.MinWang = reputation.MinWang;
-                save.Reputation.JiangHu = reputation.JiangHu;
-            }
-
-            long money = save.MoneyWen + result.MoneyDeltaWen;
-            save.MoneyWen = money < 0 ? 0 : money;
-            save.WantedLevel += result.WantedDelta;
+            var date = new TangDate(save.Date.EraId, save.Date.EraYear,
+                save.Date.Month, save.Date.Day, save.Date.HourIndex);
+            OutcomeApplier.ApplyInteraction(save, result, date);
 
             string text = c.L10n.Tr(result.TextKey);
             if (result.TextParam != null)

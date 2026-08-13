@@ -28,7 +28,7 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc }
+        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
@@ -168,6 +168,13 @@ namespace Lingyan.Game
             Rebuild();
         }
 
+        /// <summary>进入/推进对话屏（DialogueScreen 持有运行器状态）。</summary>
+        public void GoDialogue()
+        {
+            _screen = ScreenId.Dialogue;
+            Rebuild();
+        }
+
         public void GoSettings()
         {
             if (_screen != ScreenId.Settings)
@@ -224,9 +231,10 @@ namespace Lingyan.Game
                 Destroy(_screenRoot.GetChild(i).gameObject);
             }
 
-            SetWard3DVisible(_screen == ScreenId.Ward || _screen == ScreenId.Npc);
-            // NPC 屏叠在坊景上但不接管轨道相机
-            if (_screen == ScreenId.Npc)
+            SetWard3DVisible(_screen == ScreenId.Ward || _screen == ScreenId.Npc
+                || _screen == ScreenId.Dialogue);
+            // NPC/对话屏叠在坊景上但不接管轨道相机
+            if (_screen == ScreenId.Npc || _screen == ScreenId.Dialogue)
             {
                 Orbit.enabled = false;
             }
@@ -247,6 +255,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Npc:
                     NpcScreen.Build(this, _screenRoot, _activeNpcId);
+                    break;
+                case ScreenId.Dialogue:
+                    DialogueScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

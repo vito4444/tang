@@ -92,6 +92,13 @@ namespace Lingyan.PlayTests
             c.GoNpc("huan_fuzi");
             yield return null;
             yield return Snap(c, "09_npc_panel");
+
+            // 对话屏（桓夫子对话树入口）
+            bool started = Lingyan.Game.UI.DialogueScreen.TryStart(c, "huan_fuzi");
+            Assert.That(started, Is.True, "桓夫子应有对话树");
+            c.GoDialogue();
+            yield return null;
+            yield return Snap(c, "10_dialogue");
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)
