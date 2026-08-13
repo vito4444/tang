@@ -161,6 +161,12 @@ namespace Lingyan.PlayTests
             ClickButton("Buy_gift_jiu");
             yield return null;
             yield return Snap(c, "15_market");
+
+            // 结局卷轴（挂冠致仕：从九品下县尉+已成家 → 薄宦萧然档，回顾行齐）
+            save.Marriage.Married = true;
+            c.GoEnding();
+            yield return null;
+            yield return Snap(c, "16_ending");
         }
 
         /// <summary>按节点名点 UI 按钮（走 onClick，顺带验证按钮真挂了监听）。</summary>

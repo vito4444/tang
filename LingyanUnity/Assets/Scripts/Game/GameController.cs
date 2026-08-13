@@ -32,7 +32,7 @@ namespace Lingyan.Game
         private enum ScreenId
         {
             MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel, Codex,
-            Marriage, Market
+            Marriage, Market, Ending
         }
 
         private ScreenId _screen = ScreenId.MainMenu;
@@ -223,6 +223,13 @@ namespace Lingyan.Game
             Rebuild();
         }
 
+        /// <summary>结局卷轴（挂冠致仕触发；存档不销毁）。</summary>
+        public void GoEnding()
+        {
+            _screen = ScreenId.Ending;
+            Rebuild();
+        }
+
         /// <summary>市集（午开日入前散，《唐六典》市制）。</summary>
         public void GoMarket()
         {
@@ -344,6 +351,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Market:
                     MarketScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Ending:
+                    EndingScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

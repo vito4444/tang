@@ -181,8 +181,11 @@ namespace Lingyan.Game.UI
                 "Btn", c.L10n.Tr("study.codex"),
                 () => { CodexScreen.Reset(); c.GoCodex(); }, 1.05f);
 
-            UiKit.TextButton(UiKit.At(root, "BtnChapter", 0.955f, 0.075f, 200, 56),
-                "Btn", c.L10n.Tr("study.chapter_locked_short"), null, 1.0f, false);
+            // 挂冠致仕：随时可收束此生，结局按身份与名声定档（存档不销毁）
+            UiKit.TextButton(UiKit.At(root, "BtnRetire", 0.955f, 0.075f, 200, 56),
+                "Btn", c.L10n.Tr(save.Offices.ZhiShiId != null
+                    ? "study.retire" : "study.retire_commoner"),
+                () => { c.AutoSave(); c.GoEnding(); }, 1.0f);
 
             UiKit.TextButton(UiKit.At(root, "BtnSettings", 0.94f, 0.94f, 180, 48),
                 "Btn", c.L10n.Tr("menu.settings"), c.GoSettings, 1.0f);
