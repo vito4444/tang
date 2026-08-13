@@ -56,7 +56,8 @@ namespace Lingyan.Game.Services
             if (en == null)
             {
                 Debug.LogError("[Lingyan] 官职缺锁定英译: " + zh);
-                return "\u27e6" + zh + "\u27e7";
+                // 哨兵用【】：⟦⟧（U+27E6/27E7）不在 LXGWWenKai 字库，屏上会豆腐
+                return "\u3010" + zh + "\u3011";
             }
             return en;
         }

@@ -59,8 +59,10 @@ namespace Lingyan.Game.UI
             UiKit.Text(UiKit.At(panel, "ResLabel", 0.20f, 0.645f, 300, 50),
                 "T", c.L10n.Tr("settings.resolution"), 1.15f,
                 InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
+            // 不加装饰符：⟳（U+27F3）不在 LXGWWenKai 字库，实机渲成豆腐块（第十二轮实测）；
+            // 可点性由悬停括弧表意，与全局按钮一致
             UiKit.TextButton(UiKit.At(panel, "ResCycle", 0.67f, 0.645f, 460, 50),
-                "Btn", "\u27f3 " + ResolutionLabel(c, settings),
+                "Btn", ResolutionLabel(c, settings),
                 () => CycleResolution(c), 1.05f);
 
             // 显示模式

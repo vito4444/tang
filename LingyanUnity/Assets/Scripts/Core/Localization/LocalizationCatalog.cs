@@ -87,7 +87,8 @@ namespace Lingyan.Core.Localization
                 return value;
             }
             _missing.Add(key);
-            return "\u27e6" + key + "\u27e7";
+            // 哨兵用【】：⟦⟧ 不在 LXGWWenKai 字库，屏上豆腐反而藏住缺键
+            return "\u3010" + key + "\u3011";
         }
 
         public string Format(string key, Locale locale, params object[] args)
