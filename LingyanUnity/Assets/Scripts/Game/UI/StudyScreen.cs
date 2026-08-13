@@ -362,6 +362,20 @@ namespace Lingyan.Game.UI
                 text += "　" + c.L10n.TrF("career.promoted",
                     en ? c.L10n.OfficeEn(decision.NextOffice.Zh) : decision.NextOffice.Zh);
             }
+
+            // 贬谪而非 Game Over：通缉滔天或考课连殿，贬官降阶、剧情继续
+            string demotionReason = DemotionService.ShouldDemote(save);
+            if (demotionReason != null)
+            {
+                DemotionResult demotion = DemotionService.Apply(save, demotionReason);
+                if (demotion.Demoted)
+                {
+                    text += "　" + c.L10n.Tr(demotionReason) + "　"
+                        + c.L10n.TrF("career.demoted",
+                            en ? c.L10n.OfficeEn(demotion.NewOffice.Zh)
+                               : demotion.NewOffice.Zh);
+                }
+            }
             _noticeText = text;
             c.AutoSave();
             c.GoStudy(save);
