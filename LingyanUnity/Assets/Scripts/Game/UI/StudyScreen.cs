@@ -103,10 +103,10 @@ namespace Lingyan.Game.UI
             UiKit.Text(UiKit.At(right, "RobeLabel", 0.22f, ry, 300, 46),
                 "T", c.L10n.Tr("study.robe"), 1.05f,
                 InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
-            var swatch = UiKit.Swatch(UiKit.At(right, "RobeSwatch", 0.47f, ry, 42, 42),
+            var swatch = UiKit.Swatch(UiKit.At(right, "RobeSwatch", 0.42f, ry, 42, 42),
                 "Box", InkPalette.Hex(RobeColors.UiHex(robe)));
             UiKit.Stretch(swatch.rectTransform);
-            UiKit.Text(UiKit.At(right, "RobeName", 0.72f, ry, 420, 46),
+            UiKit.Text(UiKit.At(right, "RobeName", 0.68f, ry, 300, 46),
                 "T", c.L10n.Tr(RobeKey(robe)), 1.1f,
                 InkPalette.PaperText, TextAlignmentOptions.MidlineLeft);
 
@@ -175,7 +175,7 @@ namespace Lingyan.Game.UI
                 "T", label, 1.05f, InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
             UiKit.Text(UiKit.At(panel, name + "_V", 0.36f, y, 80, 46),
                 "T", value.ToString(), 1.15f, InkPalette.PaperText, TextAlignmentOptions.Center);
-            UiKit.Cells(panel, name + "_Cells", 0.48f, y, value);
+            UiKit.Cells(panel, name + "_Cells", 0.60f, y, value);
         }
 
         /// <summary>名声行：标签 + 数值 + 朱砂进度条（0–100）。</summary>

@@ -196,7 +196,7 @@ namespace Lingyan.Game.UI
             UiKit.Text(UiKit.At(panel, name + "_L", 0.80f, y, 300, 40),
                 "T", c.L10n.Tr(labelKey), 1.0f,
                 InkPalette.Faint, TextAlignmentOptions.MidlineLeft);
-            UiKit.Text(UiKit.At(panel, name + "_V", 0.80f, y - 0.052f, 300, 80),
+            UiKit.Text(UiKit.At(panel, name + "_V", 0.80f, y - 0.064f, 300, 80),
                 "T", value, 1.05f,
                 InkPalette.PaperText, TextAlignmentOptions.TopLeft);
         }

@@ -210,6 +210,7 @@ namespace Lingyan.Game.UI
             var go = new GameObject(name);
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(parent, false);
+            Stretch(rect); // 根节点同样要填满容器，否则按钮实际只有默认 100px 宽
 
             var hitArea = go.AddComponent<Image>();
             hitArea.color = new Color(0f, 0f, 0f, 0.001f);
@@ -247,6 +248,7 @@ namespace Lingyan.Game.UI
             var go = new GameObject(name);
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(parent, false);
+            Stretch(rect);
             var image = go.AddComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
@@ -259,6 +261,7 @@ namespace Lingyan.Game.UI
             var go = new GameObject(name);
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(parent, false);
+            Stretch(rect);
 
             var background = go.AddComponent<Image>();
             background.color = new Color(0.91f, 0.87f, 0.78f, 0.10f);
