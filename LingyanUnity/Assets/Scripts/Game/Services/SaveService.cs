@@ -22,29 +22,65 @@ namespace Lingyan.Game.Services
             get { return Path.Combine(SaveDir, "slot_1.json"); }
         }
 
-        public bool HasSave { get { return File.Exists(SlotPath); } }
+        private static string AutoPath
+        {
+            get { return Path.Combine(SaveDir, "autosave.json"); }
+        }
+
+        public bool HasSave
+        {
+            get { return File.Exists(SlotPath) || File.Exists(AutoPath); }
+        }
 
         public void Write(SaveData data)
         {
-            Directory.CreateDirectory(SaveDir);
-            string json = _migrator.Serialize(data);
-            string tmp = SlotPath + ".tmp";
-            File.WriteAllText(tmp, json);
-            if (File.Exists(SlotPath))
-            {
-                string bak = SlotPath + ".bak";
-                if (File.Exists(bak)) { File.Delete(bak); }
-                File.Move(SlotPath, bak);
-            }
-            File.Move(tmp, SlotPath);
-            Debug.Log("[Lingyan] 存档写入: " + SlotPath);
+            WriteTo(SlotPath, data);
         }
 
-        /// <summary>读档。坏档、版本问题一律抛 SaveException（带本地化 ReasonKey）。</summary>
+        /// <summary>自动存档（时辰推进、结案、考课、支俸等节点触发），独立槽。</summary>
+        public void WriteAuto(SaveData data)
+        {
+            WriteTo(AutoPath, data);
+        }
+
+        private void WriteTo(string path, SaveData data)
+        {
+            Directory.CreateDirectory(SaveDir);
+            string json = _migrator.Serialize(data);
+            string tmp = path + ".tmp";
+            File.WriteAllText(tmp, json);
+            if (File.Exists(path))
+            {
+                string bak = path + ".bak";
+                if (File.Exists(bak)) { File.Delete(bak); }
+                File.Move(path, bak);
+            }
+            File.Move(tmp, path);
+            Debug.Log("[Lingyan] 存档写入: " + path);
+        }
+
+        /// <summary>
+        /// 读档：手动槽与自动槽取较新者。
+        /// 坏档、版本问题一律抛 SaveException（带本地化 ReasonKey），绝不静默。
+        /// </summary>
         public SaveData Load()
         {
-            string json = File.ReadAllText(SlotPath);
+            string path = NewestPath();
+            string json = File.ReadAllText(path);
             return _migrator.Load(json);
+        }
+
+        private static string NewestPath()
+        {
+            bool hasSlot = File.Exists(SlotPath);
+            bool hasAuto = File.Exists(AutoPath);
+            if (hasSlot && hasAuto)
+            {
+                return File.GetLastWriteTimeUtc(AutoPath) > File.GetLastWriteTimeUtc(SlotPath)
+                    ? AutoPath
+                    : SlotPath;
+            }
+            return hasAuto ? AutoPath : SlotPath;
         }
     }
 }

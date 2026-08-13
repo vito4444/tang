@@ -228,6 +228,15 @@ namespace Lingyan.Game
             PendingErrorKey = null;
         }
 
+        /// <summary>关键节点自动存档（长流程防崩溃丢进度，规格第十一节）。</summary>
+        public void AutoSave()
+        {
+            if (ActiveSave != null)
+            {
+                Saves.WriteAuto(ActiveSave);
+            }
+        }
+
         public void QuitGame()
         {
 #if UNITY_EDITOR

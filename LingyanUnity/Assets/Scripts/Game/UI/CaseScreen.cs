@@ -276,6 +276,7 @@ namespace Lingyan.Game.UI
             save.Counters["cases_closed"] = closed + 1;
 
             _resultText = c.L10n.Tr(outcome.OutcomeKey);
+            c.AutoSave();
             c.GoCase();
         }
     }

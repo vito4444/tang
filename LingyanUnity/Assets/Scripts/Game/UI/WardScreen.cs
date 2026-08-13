@@ -115,6 +115,7 @@ namespace Lingyan.Game.UI
             save.Date.Month = date.Month;
             save.Date.Day = date.Day;
             save.Date.HourIndex = date.HourIndex;
+            c.AutoSave();
             c.GoWard(save);
         }
     }

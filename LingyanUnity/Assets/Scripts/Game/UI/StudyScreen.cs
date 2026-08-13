@@ -345,6 +345,7 @@ namespace Lingyan.Game.UI
                     en ? c.L10n.OfficeEn(decision.NextOffice.Zh) : decision.NextOffice.Zh);
             }
             _noticeText = text;
+            c.AutoSave();
             c.GoStudy(save);
         }
 
