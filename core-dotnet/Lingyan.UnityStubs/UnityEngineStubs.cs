@@ -59,6 +59,13 @@ namespace UnityEngine
         public static void SetResolution(int width, int height, bool fullscreen) { }
     }
 
+    public class YieldInstruction { }
+
+    public sealed class WaitForSeconds : YieldInstruction
+    {
+        public WaitForSeconds(float seconds) { }
+    }
+
     public sealed class AudioClip : Object
     {
         public static AudioClip Create(
