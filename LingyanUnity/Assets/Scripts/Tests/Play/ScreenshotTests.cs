@@ -171,6 +171,30 @@ namespace Lingyan.PlayTests
             c.GoEnding();
             yield return null;
             yield return Snap(c, "16_ending");
+
+            // 枯井案（第二案：具结丝帛案后接旧案，验流转与新线索板）
+            SaveCaseState silk = save.Cases[Lingyan.Core.Cases.SilkCase.CaseId];
+            if (silk.Accused == null)
+            {
+                Lingyan.Core.Cases.CaseService.Accuse(
+                    silk, Lingyan.Core.Cases.SilkCase.Def, "bookkeeper",
+                    Lingyan.Core.Cases.AccuseMethod.Forced, witnessTalked: false);
+            }
+            var wellNow = new Lingyan.Core.Calendar.TangDate(
+                save.Date.EraId, save.Date.EraYear, save.Date.Month,
+                save.Date.Day, save.Date.HourIndex);
+            SaveCaseState well = Lingyan.Core.Cases.CaseService.Open(
+                save, Lingyan.Core.Cases.WellCase.Def, wellNow);
+            Lingyan.Core.Cases.CaseService.Discover(
+                well, Lingyan.Core.Cases.WellCase.Def, "bone_belt");
+            Lingyan.Core.Cases.CaseService.Discover(
+                well, Lingyan.Core.Cases.WellCase.Def, "missing_roll");
+            Lingyan.Core.Cases.CaseService.Combine(
+                well, Lingyan.Core.Cases.WellCase.Def, "bone_belt", "missing_roll");
+            Lingyan.Game.UI.CaseScreen.Reset();
+            c.GoCase();
+            yield return null;
+            yield return Snap(c, "17_case2");
         }
 
         /// <summary>按节点名点 UI 按钮（走 onClick，顺带验证按钮真挂了监听）。</summary>
