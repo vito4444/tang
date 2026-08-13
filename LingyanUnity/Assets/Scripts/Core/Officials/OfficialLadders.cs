@@ -46,7 +46,8 @@ namespace Lingyan.Core.Officials
 
         public static OfficeDef Get(string id)
         {
-            return ById.TryGetValue(id, out var def) ? def : null;
+            // 白身（未入仕）时 ZhiShiId 为 null，与 SanGuanTable/JueTable 同约定：null 入 null 出
+            return id != null && ById.TryGetValue(id, out var def) ? def : null;
         }
 
         public static IEnumerable<OfficeDef> All { get { return ById.Values; } }
