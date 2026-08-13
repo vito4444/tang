@@ -70,6 +70,25 @@ namespace Lingyan.PlayTests
             SetRig(c, new Vector3(0f, 1.2f, 0f), yaw: -170f, pitch: 36f, distance: 27f);
             yield return Snap(c, "07_ward_midnight");
 
+            // 步态帧证据（第十四轮附加，不在 17 张正编内）：
+            // 先把郑五压回巷心 (0,0,0)，回巳时触发 MoveTo 武侯铺 (8,-12.6) 全程约 15m；
+            // 相机压近路径首段。步态 0.18s 交替、软渲染帧时抖动大，
+            // 连拍三张各隔约一帧期，保证必有相邻两张腿型异相，位移亦是实走证据。
+            GameObject zhengWu = GameObject.Find("Npc_zheng_wu");
+            Assert.That(zhengWu, Is.Not.Null, "郑五标记未找到");
+            zhengWu.GetComponent<Lingyan.Game.World3D.PixelWalker>()
+                .Snap(new Vector3(0f, 0f, 0f));
+            save.Date.HourIndex = 5;
+            c.GoWard(save);
+            yield return null;
+            SetRig(c, new Vector3(0.5f, 0.9f, -0.8f), yaw: -160f, pitch: 16f, distance: 5f);
+            yield return new WaitForSeconds(0.45f);
+            yield return Snap(c, "walk_a");
+            yield return new WaitForSeconds(0.19f);
+            yield return Snap(c, "walk_b");
+            yield return new WaitForSeconds(0.19f);
+            yield return Snap(c, "walk_c");
+
             // 设置
             c.GoSettings();
             yield return null;
