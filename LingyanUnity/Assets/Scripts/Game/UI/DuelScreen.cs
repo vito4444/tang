@@ -94,11 +94,13 @@ namespace Lingyan.Game.UI
                 Bar(top, "RHp", 0.88f, 0.38f, InkPalette.Bad),
                 Bar(top, "RSt", 0.88f, 0.16f, InkPalette.Good));
 
-            UiKit.Text(UiKit.At(root, "Controls", 0.5f, 0.06f, 1200, 40),
-                "T", c.L10n.Tr("duel.controls"), 1.0f,
-                new Color(InkPalette.PaperText.r, InkPalette.PaperText.g,
-                    InkPalette.PaperText.b, 0.75f),
-                TextAlignmentOptions.Center);
+            // 暗底衬条：淡字压浅色地面对比不足（第八轮目检观察）
+            RectTransform controlsBar = UiKit.At(root, "ControlsBar", 0.5f, 0.06f, 1240, 52);
+            var controlsBg = controlsBar.gameObject.AddComponent<Image>();
+            controlsBg.color = new Color(0.05f, 0.045f, 0.035f, 0.60f);
+            controlsBg.raycastTarget = false;
+            UiKit.Text(controlsBar, "Controls", c.L10n.Tr("duel.controls"), 1.0f,
+                InkPalette.PaperText, TextAlignmentOptions.Center);
         }
 
         private static RectTransform Bar(
