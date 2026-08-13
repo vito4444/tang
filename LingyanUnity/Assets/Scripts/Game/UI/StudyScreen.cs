@@ -282,6 +282,11 @@ namespace Lingyan.Game.UI
                 UiKit.TextButton(UiKit.At(root, "BtnSalary", 0.94f, 0.825f, 220, 50),
                     "Btn", c.L10n.Tr("career.salary"),
                     () => DrawSalary(c, save, yearMonth), 1.0f, canDraw);
+
+                // 遣媒议亲：有官身方有门第可讲
+                UiKit.TextButton(UiKit.At(root, "BtnMarriage", 0.94f, 0.775f, 220, 50),
+                    "Btn", c.L10n.Tr("study.marriage"),
+                    () => { MarriageScreen.Reset(); c.GoMarriage(); }, 1.0f);
             }
         }
 

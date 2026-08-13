@@ -26,6 +26,15 @@ namespace Lingyan.Core.Saves.Migrations
             {
                 save["codex"] = new JArray();
             }
+            if (save["marriage"] == null)
+            {
+                save["marriage"] = new JObject
+                {
+                    ["match"] = JValue.CreateNull(),
+                    ["rite"] = 0,
+                    ["married"] = false
+                };
+            }
             return save;
         }
     }

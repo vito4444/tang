@@ -78,6 +78,24 @@ namespace Lingyan.Core.Saves
         /// <summary>已解锁的 Codex 词条 id（v3 起；遇术语自动解锁，规格第十一节）。</summary>
         [JsonProperty("codex", Required = Required.Always)]
         public List<string> CodexUnlocked { get; set; } = new List<string>();
+
+        /// <summary>婚姻状态（v3 起；六礼推进与婚约，规格第九节）。</summary>
+        [JsonProperty("marriage", Required = Required.Always)]
+        public SaveMarriageState Marriage { get; set; } = new SaveMarriageState();
+    }
+
+    public sealed class SaveMarriageState
+    {
+        /// <summary>议亲对象 id；null = 无婚约。</summary>
+        [JsonProperty("match", Required = Required.AllowNull)]
+        public string MatchId { get; set; }
+
+        /// <summary>六礼已成几步（0–6）。</summary>
+        [JsonProperty("rite", Required = Required.Always)]
+        public int RiteStep { get; set; }
+
+        [JsonProperty("married", Required = Required.Always)]
+        public bool Married { get; set; }
     }
 
     public sealed class SaveCaseState

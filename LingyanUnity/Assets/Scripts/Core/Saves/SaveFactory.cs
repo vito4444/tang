@@ -75,7 +75,8 @@ namespace Lingyan.Core.Saves
                 {
                     // 开卷即识的常识词条
                     "fang", "xiaojin", "guan_currency", "wen_currency"
-                }
+                },
+                Marriage = new SaveMarriageState()
             };
         }
     }

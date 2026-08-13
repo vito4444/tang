@@ -30,7 +30,8 @@ namespace Lingyan.Game
 
         private enum ScreenId
         {
-            MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel, Codex
+            MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel, Codex,
+            Marriage
         }
 
         private ScreenId _screen = ScreenId.MainMenu;
@@ -207,6 +208,13 @@ namespace Lingyan.Game
             Rebuild();
         }
 
+        /// <summary>议亲（六礼）。</summary>
+        public void GoMarriage()
+        {
+            _screen = ScreenId.Marriage;
+            Rebuild();
+        }
+
         public void GoSettings()
         {
             if (_screen != ScreenId.Settings)
@@ -309,6 +317,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Codex:
                     CodexScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Marriage:
+                    MarriageScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);
