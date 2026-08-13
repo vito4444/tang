@@ -41,6 +41,7 @@
   { "id": "dalisi", "zh": "大理寺", "en": "Court of Judicial Review", "category": "institution", "verified": true, "note": "" },
   { "id": "xingbu", "zh": "刑部", "en": "Ministry of Justice", "category": "institution", "verified": true, "note": "" },
   { "id": "yushitai", "zh": "御史台", "en": "Censorate", "category": "institution", "verified": true, "note": "" },
+  { "id": "tong_gui", "zh": "铜匦", "en": "bronze petition box", "category": "institution", "verified": false, "note": "垂拱二年（686）置于朝堂：东延恩、南招谏、西申冤、北通玄，四匦受天下投书" },
   { "id": "zhongshusheng", "zh": "中书省", "en": "Secretariat", "category": "institution", "verified": true, "note": "光宅改凤阁" },
   { "id": "menxiasheng", "zh": "门下省", "en": "Chancellery", "category": "institution", "verified": true, "note": "光宅改鸾台" },
   { "id": "libu_personnel", "zh": "吏部", "en": "Ministry of Personnel", "category": "institution", "verified": true, "note": "铨选、考课所司" },

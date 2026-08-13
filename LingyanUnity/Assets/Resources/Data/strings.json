@@ -300,6 +300,22 @@
 
   "dlg.finished": { "zh": "（对话毕）", "en": "(The conversation ends.)" },
 
+  "study.tonggui": { "zh": "诣铜匦", "en": "Petition Box" },
+  "tonggui.head": { "zh": "四匦受书", "en": "The Four Boxes" },
+  "tonggui.slot.yanen": { "zh": "延恩（自荐）", "en": "Grace (self-plea)" },
+  "tonggui.slot.zhaojian": { "zh": "招谏（言政）", "en": "Counsel (remonstrate)" },
+  "tonggui.slot.shenyuan": { "zh": "申冤（雪滞）", "en": "Grievance (redress)" },
+  "tonggui.slot.tongxuan": { "zh": "通玄（言象）", "en": "Portents (omens)" },
+  "tonggui.result.monthly_limit": { "zh": "有司须校理来牍，月投一书——本月已投过了。", "en": "The clerks must sift what comes in: one petition a month, and yours is already in the box." },
+  "tonggui.result.yanen_officed": { "zh": "延恩匦受布衣自荐。有官守者，不由此进。", "en": "The Grace box hears commoners pleading their talents. Those who hold office do not enter by this door." },
+  "tonggui.result.yanen_ok": { "zh": "自荐书投入延恩匦。数日后有司来问了姓名籍贯——上头有人记住你了。", "en": "Your self-recommendation goes into the Grace box. Days later a clerk comes asking your name and registry—someone above has marked you." },
+  "tonggui.result.zhaojian_ok": { "zh": "谏书投入招谏匦。同僚见了敬三分，坊间却有人嘀咕：又一个往上递话的。", "en": "Your remonstrance goes into the Counsel box. Colleagues nod with new respect; the ward mutters: another one passing words upstairs." },
+  "tonggui.result.shenyuan_no_case": { "zh": "申冤匦受冤滞之诉。你的案卷清白，无冤可申。", "en": "The Grievance box hears the wronged. Your files are clean—there is nothing to redress." },
+  "tonggui.result.shenyuan_no_backing": { "zh": "申冤须有人证愿随书具名。民望不足（须至五十），无人肯出头。", "en": "Redress wants witnesses willing to put their names to the page. Your favor falls short (fifty required); no one steps forward." },
+  "tonggui.result.shenyuan_ok": { "zh": "冤案昭雪！错判开释，苦主焚香于坊门。你自承其失，官声折损——但青史会记得改错的人。", "en": "The wrong is righted! The mistried walk free; incense burns at the ward gate. You own the error and your standing pays for it—but the histories remember those who correct themselves." },
+  "tonggui.result.tongxuan_ok": { "zh": "你把观星所得投入通玄匦。坊间传你是异士；有司皱眉，签了收讫。", "en": "Your star-readings go into the Portents box. The ward now calls you a mystic; the clerks frown and stamp the receipt." },
+  "rep.src.tonggui": { "zh": "铜匦投书", "en": "A petition to the bronze box" },
+
   "study.retire": { "zh": "挂冠致仕", "en": "Resign Office" },
   "study.retire_commoner": { "zh": "就此终老", "en": "Settle Into Old Age" },
   "ending.head": { "zh": "结局", "en": "Ending" },

@@ -240,17 +240,28 @@ namespace Lingyan.Game.UI
             UiKit.Bar(panel, name + "_Bar", 0.66f, y, 300, value / 100f);
         }
 
+        private static bool _tongguiMode;
+
         /// <summary>仕途动作：破案后铨选授官；任上岁末赴考，考成迁转（服色随散官变）。</summary>
         private static void BuildCareerActions(GameController c, RectTransform root, SaveData save)
         {
             var now = new TangDate(save.Date.EraId, save.Date.EraYear,
                 save.Date.Month, save.Date.Day, save.Date.HourIndex);
 
+            // 铜匦四匦模式：整列换成投书选择（垂拱二年立匦，本朝正当其时）
+            if (_tongguiMode)
+            {
+                BuildTongGui(c, root, save, now);
+                return;
+            }
+
+            float actionY = 0.875f;
+
             // 入仕分化（其余主角线开局）：五线各有门槛与去处，按钮常亮、未达门槛点开见驳文
             if (save.Offices.ZhiShiId == null && save.Offices.SanGuanId == null)
             {
                 EntryOffer offer = CareerEntryService.Evaluate(save);
-                UiKit.TextButton(UiKit.At(root, "BtnAppoint", 0.94f, 0.875f, 220, 50),
+                UiKit.TextButton(UiKit.At(root, "BtnAppoint", 0.94f, actionY, 220, 50),
                     "Btn", c.L10n.Tr(offer.ActionKey),
                     () =>
                     {
@@ -279,12 +290,11 @@ namespace Lingyan.Game.UI
                         c.AutoSave();
                         c.GoStudy(save);
                     }, 1.0f);
-                return;
+                actionY -= 0.05f;
             }
-
-            // 岁末赴考：任上且当年未考
-            if (save.Offices.ZhiShiId != null)
+            else if (save.Offices.ZhiShiId != null)
             {
+                // 岁末赴考：任上且当年未考
                 int year = EraTable.ToGregorianYear(save.Date.EraId, save.Date.EraYear);
                 save.Counters.TryGetValue("last_kaoke_year", out int lastYear);
                 bool canExam = year > lastYear;
@@ -304,7 +314,78 @@ namespace Lingyan.Game.UI
                 UiKit.TextButton(UiKit.At(root, "BtnMarriage", 0.94f, 0.775f, 220, 50),
                     "Btn", c.L10n.Tr("study.marriage"),
                     () => { MarriageScreen.Reset(); c.GoMarriage(); }, 1.0f);
+                actionY = 0.725f;
             }
+            // （胡商纳资虚衔：无职事无考课，actionY 停在 0.875）
+
+            // 诣铜匦（垂拱二年立于朝堂，四匦受天下投书；白身官身皆可诣）
+            UiKit.TextButton(UiKit.At(root, "BtnTongGui", 0.94f, actionY, 220, 50),
+                "Btn", c.L10n.Tr("study.tonggui"),
+                () => { _tongguiMode = true; c.GoStudy(save); }, 1.0f);
+        }
+
+        /// <summary>四匦选择列（替换仕途动作列呈现）。</summary>
+        private static void BuildTongGui(
+            GameController c, RectTransform root, SaveData save, TangDate now)
+        {
+            UiKit.Text(UiKit.At(root, "TongGuiHead", 0.94f, 0.905f, 230, 44),
+                "T", c.L10n.Tr("tonggui.head"), 1.0f,
+                InkPalette.Seal, TextAlignmentOptions.Center);
+
+            (GuiSlot Slot, string Key)[] slots =
+            {
+                (GuiSlot.YanEn, "tonggui.slot.yanen"),
+                (GuiSlot.ZhaoJian, "tonggui.slot.zhaojian"),
+                (GuiSlot.ShenYuan, "tonggui.slot.shenyuan"),
+                (GuiSlot.TongXuan, "tonggui.slot.tongxuan"),
+            };
+            float y = 0.85f;
+            foreach (var entry in slots)
+            {
+                GuiSlot captured = entry.Slot;
+                UiKit.TextButton(UiKit.At(root, "Gui_" + entry.Slot, 0.94f, y, 220, 50),
+                    "Btn", c.L10n.Tr(entry.Key),
+                    () => SubmitTongGui(c, save, captured, now), 1.0f);
+                y -= 0.05f;
+            }
+            UiKit.TextButton(UiKit.At(root, "GuiBack", 0.94f, y, 220, 50),
+                "Btn", c.L10n.Tr("creation.back"),
+                () => { _tongguiMode = false; c.GoStudy(save); }, 1.0f);
+        }
+
+        private static void SubmitTongGui(
+            GameController c, SaveData save, GuiSlot slot, TangDate now)
+        {
+            int year = EraTable.ToGregorianYear(save.Date.EraId, save.Date.EraYear);
+            TongGuiResult result = TongGuiService.Submit(
+                save, slot, year * 100 + save.Date.Month);
+            if (result.Accepted)
+            {
+                if (result.GuanShengDelta != 0)
+                {
+                    Lingyan.Core.Social.OutcomeApplier.ApplyReputation(save,
+                        Lingyan.Core.Reputation.ReputationTrack.GuanSheng,
+                        result.GuanShengDelta, "rep.src.tonggui", now);
+                }
+                if (result.MinWangDelta != 0)
+                {
+                    Lingyan.Core.Social.OutcomeApplier.ApplyReputation(save,
+                        Lingyan.Core.Reputation.ReputationTrack.MinWang,
+                        result.MinWangDelta, "rep.src.tonggui", now);
+                }
+                if (result.JiangHuDelta != 0)
+                {
+                    Lingyan.Core.Social.OutcomeApplier.ApplyReputation(save,
+                        Lingyan.Core.Reputation.ReputationTrack.JiangHu,
+                        result.JiangHuDelta, "rep.src.tonggui", now);
+                }
+                Lingyan.Core.Terminology.CodexService.OnEvent(
+                    save, Lingyan.Core.Terminology.CodexEvent.TongGuiUsed);
+                c.AutoSave();
+            }
+            _tongguiMode = false;
+            _noticeText = c.L10n.Tr(result.TextKey);
+            c.GoStudy(save);
         }
 
         private static void DrawSalary(GameController c, SaveData save, int yearMonth)
