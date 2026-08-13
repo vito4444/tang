@@ -151,7 +151,9 @@ namespace Lingyan.Game.World3D
             Camera cam = Camera.main;
             if (cam == null) { return; }
             Vector3 toCam = cam.transform.position - transform.position;
-            float yaw = Mathf.Atan2(toCam.x, toCam.z) * Mathf.Rad2Deg;
+            // Unity Quad 可见面法线是 -Z：让 +Z 背对相机，-Z（画面）才朝相机。
+            // 原式把 +Z 转向相机，等于永远以背面示人，整个像素人被背面剔除。
+            float yaw = Mathf.Atan2(-toCam.x, -toCam.z) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         }
     }

@@ -78,6 +78,9 @@ namespace Lingyan.Game
         private void BuildCameraAndCanvas()
         {
             var camGo = new GameObject("Main Camera");
+            // 名字不等于标签：BillboardSprite 靠 Camera.main（查 MainCamera 标签）转身。
+            // 不打标签则像素人永不面向相机——对决屏 LookAt 一转，玩家面片背面朝镜头被剔除隐身。
+            camGo.tag = "MainCamera";
             camGo.transform.SetParent(transform);
             var cam = camGo.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
