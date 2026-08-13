@@ -67,7 +67,8 @@ namespace Lingyan.Core.Saves
                 StoryFlags = new Dictionary<string, bool>(),
                 Counters = new Dictionary<string, int>(),
                 WantedLevel = 0,
-                NpcStates = new Dictionary<string, SaveNpcState>()
+                NpcStates = new Dictionary<string, SaveNpcState>(),
+                Cases = new Dictionary<string, SaveCaseState>()
             };
         }
     }

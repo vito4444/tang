@@ -10,7 +10,7 @@ namespace Lingyan.Core.Saves
     /// </summary>
     public sealed class SaveData
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         [JsonProperty("schemaVersion", Required = Required.Always)]
         public int SchemaVersion { get; set; } = CurrentVersion;
@@ -61,6 +61,38 @@ namespace Lingyan.Core.Saves
         [JsonProperty("npcStates", Required = Required.Always)]
         public Dictionary<string, SaveNpcState> NpcStates { get; set; }
             = new Dictionary<string, SaveNpcState>();
+
+        /// <summary>案件进度（v3 起：查了一半的案子，线索一条都不能丢）。</summary>
+        [JsonProperty("cases", Required = Required.Always)]
+        public Dictionary<string, SaveCaseState> Cases { get; set; }
+            = new Dictionary<string, SaveCaseState>();
+    }
+
+    public sealed class SaveCaseState
+    {
+        [JsonProperty("status", Required = Required.Always)]
+        public int Status { get; set; }
+
+        [JsonProperty("opened", Required = Required.Always)]
+        public string OpenedStamp { get; set; }
+
+        [JsonProperty("deadline", Required = Required.Always)]
+        public string DeadlineStamp { get; set; }
+
+        [JsonProperty("clues", Required = Required.Always)]
+        public List<string> Clues { get; set; } = new List<string>();
+
+        [JsonProperty("inferences", Required = Required.Always)]
+        public List<string> Inferences { get; set; } = new List<string>();
+
+        [JsonProperty("accused", Required = Required.AllowNull)]
+        public string Accused { get; set; }
+
+        [JsonProperty("outcome", Required = Required.AllowNull)]
+        public string OutcomeKey { get; set; }
+
+        [JsonProperty("wrongful", Required = Required.Always)]
+        public bool WrongfulConviction { get; set; }
     }
 
     public sealed class SaveNpcState

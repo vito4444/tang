@@ -40,7 +40,8 @@ namespace Lingyan.Core.Saves
             return new SaveMigrator(new ISaveMigration[]
             {
                 new Migrations.V0ToV1(),
-                new Migrations.V1ToV2()
+                new Migrations.V1ToV2(),
+                new Migrations.V2ToV3()
             });
         }
 
