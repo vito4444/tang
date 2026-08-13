@@ -27,13 +27,18 @@ namespace Lingyan.Game.Screenshot
             RenderMode previousMode = canvas.renderMode;
             int previousMask = cam.cullingMask;
 
+            // 顺序要紧：先给相机挂 RT（此后 camera.pixelRect = RT 尺寸），
+            // 再切画布到相机模式，然后强制重排——否则画布沿用无头小窗的旧布局，
+            // 文字按小窗宽度断行（首轮截图的换行事故即此因）。
+            var rt = new RenderTexture(width, height, 24);
+            cam.targetTexture = rt;
+
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = cam;
             canvas.planeDistance = 1f;
             cam.cullingMask = ~0; // UI 层要进相机；纯 UI 屏无 3D 物体，全开无副作用
 
-            var rt = new RenderTexture(width, height, 24);
-            cam.targetTexture = rt;
+            Canvas.ForceUpdateCanvases();
             cam.Render();
 
             RenderTexture.active = rt;

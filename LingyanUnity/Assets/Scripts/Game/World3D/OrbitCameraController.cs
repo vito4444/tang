@@ -8,15 +8,16 @@ namespace Lingyan.Game.World3D
     /// </summary>
     public sealed class OrbitCameraController : MonoBehaviour
     {
-        public Vector3 Target = new Vector3(0f, 1.5f, -4f);
+        // 默认机位：自南门内侧向北望，两座宅院、井亭与主巷同框
+        public Vector3 Target = new Vector3(0f, 1.2f, 3f);
 
         /// <summary>绕 y 角（度）。</summary>
-        public float Yaw = 170f;
+        public float Yaw = -14f;
 
         /// <summary>俯角（度），限 12–70。</summary>
-        public float Pitch = 38f;
+        public float Pitch = 42f;
 
-        public float Distance = 30f;
+        public float Distance = 34f;
 
         public const float MinPitch = 12f;
         public const float MaxPitch = 70f;

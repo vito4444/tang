@@ -43,7 +43,7 @@ namespace Lingyan.Game.World3D
                 new Vector3(w + 1.4f, plinthHeight, d + 1.4f), TangColors.Stone);
             float baseTop = plinthHeight;
 
-            // 檐柱：三间四柱 × 前后两排（唐柱粗壮，径约柱高 1/8）
+            // 檐柱：三间四柱 × 前后两排（唐柱粗壮，径约柱高 1/8），下置柱础
             float columnDiameter = ch * 0.14f;
             var columnXs = new[] { -w / 2f, -w / 6f, w / 6f, w / 2f };
             foreach (float x in columnXs)
@@ -53,6 +53,10 @@ namespace Lingyan.Game.World3D
                     MeshKit.Cylinder(root.transform, "Column",
                         new Vector3(x, baseTop + ch / 2f, zSign * d / 2f),
                         columnDiameter / 2f, ch, TangColors.Timber);
+                    MeshKit.Box(root.transform, "ColumnBase",
+                        new Vector3(x, baseTop + 0.09f, zSign * d / 2f),
+                        new Vector3(columnDiameter * 1.5f, 0.18f, columnDiameter * 1.5f),
+                        TangColors.Stone);
                 }
             }
 
@@ -116,6 +120,22 @@ namespace Lingyan.Game.World3D
                         new Vector3(0.34f, bandHeight * 0.6f, 0.42f), TangColors.TimberDark);
                 }
             }
+
+            // 拱眼壁：铺作之间以白灰填充（唐构做法），顺带挡住檐下透空
+            foreach (float zSign in new[] { -1f, 1f })
+            {
+                MeshKit.Box(parent, "GongyanWall",
+                    new Vector3(0, bracketBase + bandHeight * 0.5f, zSign * (d / 2f - 0.10f)),
+                    new Vector3(w + 0.2f, bandHeight, 0.16f), TangColors.Wall);
+            }
+            // 檐檩（铺作顶通长承檐）
+            foreach (float zSign in new[] { -1f, 1f })
+            {
+                MeshKit.Box(parent, "EavePurlin",
+                    new Vector3(0, bracketBase + bandHeight - 0.10f,
+                        zSign * (d / 2f + eaveOverhang * 0.35f)),
+                    new Vector3(w + 1.2f, 0.20f, 0.20f), TangColors.Timber);
+            }
         }
 
         /// <summary>
@@ -141,15 +161,15 @@ namespace Lingyan.Game.World3D
                 basePos + new Vector3(0, bandHeight * 0.68f, zSign * eaveOverhang * 0.30f),
                 new Vector3(1.0f, bandHeight * 0.16f, 0.22f), TangColors.Timber);
 
-            // 下昂：自攒心斜向外下，长过华拱，昂身即那道斜线
-            float angLength = eaveOverhang * 1.25f;
+            // 下昂：自攒心斜向外下，昂身即那道斜线；昂尖压在檐口之下，不穿瓦面
+            float angLength = eaveOverhang * 1.0f;
             const float angPitchDeg = 26f;
             GameObject ang = MeshKit.Box(parent, "XiaAng",
                 Vector3.zero, new Vector3(0.16f, 0.11f, angLength), TangColors.TimberDark);
             ang.transform.localPosition = basePos + new Vector3(
                 0,
-                bandHeight * 0.52f - Mathf.Sin(angPitchDeg * Mathf.Deg2Rad) * angLength * 0.28f,
-                zSign * angLength * 0.42f);
+                bandHeight * 0.40f - Mathf.Sin(angPitchDeg * Mathf.Deg2Rad) * angLength * 0.30f,
+                zSign * angLength * 0.40f);
             ang.transform.localRotation = Quaternion.Euler(zSign * angPitchDeg, 0, 0);
         }
 
@@ -170,11 +190,29 @@ namespace Lingyan.Game.World3D
 
             foreach (float zSign in new[] { -1f, 1f })
             {
+                Quaternion slopeRotation = Quaternion.Euler(zSign * pitch * Mathf.Rad2Deg, 0, 0);
+                Vector3 slopeCenter = new Vector3(
+                    0, (eaveY + ridgeY) / 2f + 0.05f, zSign * halfSpan / 2f);
+
                 GameObject slope = MeshKit.Box(parent, zSign < 0 ? "RoofFront" : "RoofBack",
                     Vector3.zero, new Vector3(roofWidth, 0.15f, slopeLength), TangColors.Tile);
-                slope.transform.localPosition = new Vector3(
-                    0, (eaveY + ridgeY) / 2f + 0.05f, zSign * halfSpan / 2f);
-                slope.transform.localRotation = Quaternion.Euler(zSign * pitch * Mathf.Rad2Deg, 0, 0);
+                slope.transform.localPosition = slopeCenter;
+                slope.transform.localRotation = slopeRotation;
+
+                // 筒瓦垄：沿坡面等距窄条，读出唐瓦屋面的纵向肌理
+                Vector3 slopeNormal = slopeRotation * Vector3.up;
+                int ridgeCount = (int)(roofWidth / 0.62f);
+                float ridgeSpan = roofWidth - 0.5f;
+                for (int i = 0; i <= ridgeCount; i++)
+                {
+                    float x = -ridgeSpan / 2f + ridgeSpan * i / ridgeCount;
+                    GameObject tileRidge = MeshKit.Box(parent, "TileRidge",
+                        Vector3.zero, new Vector3(0.10f, 0.06f, slopeLength - 0.1f),
+                        TangColors.Ridge);
+                    tileRidge.transform.localPosition =
+                        slopeCenter + new Vector3(x, 0, 0) + slopeNormal * 0.10f;
+                    tileRidge.transform.localRotation = slopeRotation;
+                }
 
                 // 檐口椽带（深色收边，读出檐厚度）
                 GameObject eaveTrim = MeshKit.Box(parent, "EaveTrim",

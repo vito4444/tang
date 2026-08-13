@@ -38,7 +38,7 @@ namespace Lingyan.Game.UI
                 "T", c.L10n.Tr(SampleWard.Ward.NameKey), 1.25f,
                 InkPalette.PaperText, TextAlignmentOptions.MidlineLeft);
 
-            UiKit.Text(UiKit.At(topBar, "Date", 0.45f, 0.5f, 900, 50),
+            UiKit.Text(UiKit.At(topBar, "Date", 0.45f, 0.5f, 1150, 50),
                 "T", (en ? date.ToEn() : date.ToZh())
                     + " · " + (en ? date.SolarTerm.En : date.SolarTerm.Zh),
                 1.0f, InkPalette.Faint, TextAlignmentOptions.Center);
@@ -54,7 +54,7 @@ namespace Lingyan.Game.UI
                 new Vector2(0.665f, 0.60f), new Vector2(0.985f, 0.90f),
                 Vector2.zero, Vector2.zero);
             var nowBg = nowPanel.gameObject.AddComponent<Image>();
-            nowBg.color = new Color(0.05f, 0.045f, 0.035f, 0.50f);
+            nowBg.color = new Color(0.05f, 0.045f, 0.035f, 0.64f);
             nowBg.raycastTarget = false;
             UiKit.Frame(nowPanel, "Frame", InkPalette.Faint, 0.22f, 0f);
 

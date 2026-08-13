@@ -232,6 +232,7 @@ namespace UnityEngine
         public int sortingOrder { get; set; }
         public Camera worldCamera { get; set; }
         public float planeDistance { get; set; }
+        public static void ForceUpdateCanvases() { }
     }
 
     public enum RuntimeInitializeLoadType

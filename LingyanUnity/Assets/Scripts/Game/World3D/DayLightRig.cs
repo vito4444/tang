@@ -36,10 +36,11 @@ namespace Lingyan.Game.World3D
             _light.intensity = (float)state.Intensity;
 
             Color lightColor = _light.color;
+            float ambientBoost = state.IsMoon ? 0.50f : 0.90f; // 夜里压暗，别把月夜照成阴天
             RenderSettings.ambientLight = new Color(
-                lightColor.r * (float)state.Ambient * 0.9f + 0.05f,
-                lightColor.g * (float)state.Ambient * 0.9f + 0.05f,
-                lightColor.b * (float)state.Ambient * 0.95f + 0.07f);
+                lightColor.r * (float)state.Ambient * ambientBoost + (state.IsMoon ? 0.02f : 0.05f),
+                lightColor.g * (float)state.Ambient * ambientBoost + (state.IsMoon ? 0.02f : 0.05f),
+                lightColor.b * (float)state.Ambient * (ambientBoost + 0.05f) + (state.IsMoon ? 0.04f : 0.07f));
 
             Color sky = state.IsMoon
                 ? new Color(0.055f, 0.075f, 0.125f)

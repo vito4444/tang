@@ -48,11 +48,11 @@ namespace Lingyan.PlayTests
             yield return null;
             yield return Snap(c, "03_study");
 
-            // 坊景 · 巳时全景
+            // 坊景 · 巳时全景（自南望北：宅院、井亭、主巷同框）
             c.GoWard(save);
             yield return null;
             yield return null;
-            SetRig(c, new Vector3(0f, 1.5f, -4f), yaw: 170f, pitch: 38f, distance: 30f);
+            SetRig(c, new Vector3(0f, 1.2f, 3f), yaw: -14f, pitch: 42f, distance: 34f);
             yield return Snap(c, "04_ward_noon_wide");
 
             // 坊景 · 南门楼近景（看鸱尾与门扇）
@@ -67,7 +67,7 @@ namespace Lingyan.PlayTests
             save.Date.HourIndex = 0;
             c.GoWard(save);
             yield return null;
-            SetRig(c, new Vector3(0f, 1.5f, -6f), yaw: 175f, pitch: 34f, distance: 26f);
+            SetRig(c, new Vector3(0f, 1.2f, 0f), yaw: -170f, pitch: 36f, distance: 27f);
             yield return Snap(c, "07_ward_midnight");
 
             // 设置

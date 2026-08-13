@@ -77,6 +77,13 @@ namespace Lingyan.Game.World3D
             BuildWalls(t);
             List<GameObject> gateLeaves = BuildSouthGate(t);
 
+            // 巷道：南门直抵北墙的主巷 + 十字支巷（黄土踩实的浅色便道）
+            Color lane = new Color(0.62f, 0.56f, 0.45f);
+            MeshKit.Box(t, "LaneMain", new Vector3(0f, 0.012f, -1f),
+                new Vector3(3.4f, 0.024f, 40f), lane);
+            MeshKit.Box(t, "LaneCross", new Vector3(0f, 0.012f, 2f),
+                new Vector3(50f, 0.024f, 2.8f), lane);
+
             // 三座屋：桓宅（大）、康家小院、武侯铺
             TangHouseBuilder.Build(t, "House_Huan", new Vector3(-12f, 0f, 9f),
                 new TangHouseBuilder.Config { Width = 9f, Depth = 6f, ColumnHeight = 3.6f });
@@ -224,24 +231,28 @@ namespace Lingyan.Game.World3D
             pavilion.transform.localPosition = position;
             Transform p = pavilion.transform;
 
-            MeshKit.Cylinder(p, "WellRing", new Vector3(0f, 0.35f, 0f), 0.7f, 0.7f,
+            // 井圈高出地面，井口可读
+            MeshKit.Cylinder(p, "WellRing", new Vector3(0f, 0.45f, 0f), 0.62f, 0.9f,
                 TangColors.Stone);
-            foreach (var (x, z) in new[] { (-1.1f, -1.1f), (-1.1f, 1.1f), (1.1f, -1.1f), (1.1f, 1.1f) })
+            MeshKit.Cylinder(p, "WellMouth", new Vector3(0f, 0.92f, 0f), 0.45f, 0.06f,
+                new Color(0.10f, 0.10f, 0.11f));
+
+            foreach (var (x, z) in new[] { (-0.95f, -0.95f), (-0.95f, 0.95f), (0.95f, -0.95f), (0.95f, 0.95f) })
             {
-                MeshKit.Cylinder(p, "PavColumn", new Vector3(x, 1.3f, z), 0.09f, 2.6f,
+                MeshKit.Cylinder(p, "PavColumn", new Vector3(x, 1.25f, z), 0.12f, 2.5f,
                     TangColors.Timber);
             }
             float pitch = (float)Lingyan.Core.Architecture.TangArchitectureSpec
-                .RoofPitchRadians(3.0) * Mathf.Rad2Deg;
+                .RoofPitchRadians(2.4) * Mathf.Rad2Deg;
             foreach (float zSign in new[] { -1f, 1f })
             {
                 GameObject slope = MeshKit.Box(p, "PavRoof", Vector3.zero,
-                    new Vector3(3.4f, 0.1f, 1.9f), TangColors.Tile);
-                slope.transform.localPosition = new Vector3(0f, 2.95f, zSign * 0.8f);
+                    new Vector3(2.6f, 0.09f, 1.5f), TangColors.Tile);
+                slope.transform.localPosition = new Vector3(0f, 2.78f, zSign * 0.62f);
                 slope.transform.localRotation = Quaternion.Euler(zSign * pitch, 0f, 0f);
             }
-            MeshKit.Box(p, "PavRidge", new Vector3(0f, 3.28f, 0f),
-                new Vector3(3.4f, 0.16f, 0.22f), TangColors.Ridge);
+            MeshKit.Box(p, "PavRidge", new Vector3(0f, 3.02f, 0f),
+                new Vector3(2.7f, 0.14f, 0.20f), TangColors.Ridge);
         }
 
         private static void BuildPagodaTree(Transform t, string name, Vector3 position)
