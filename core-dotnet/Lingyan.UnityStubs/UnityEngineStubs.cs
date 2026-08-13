@@ -23,7 +23,10 @@ namespace UnityEngine
         public GameObject(string name) { this.name = name; }
         public Transform transform { get { return null; } }
         public T AddComponent<T>() where T : Component { return null; }
+        public T GetComponent<T>() { return default; }
         public void SetActive(bool value) { }
+        public bool activeSelf { get { return true; } }
+        public static GameObject CreatePrimitive(PrimitiveType type) { return null; }
     }
 
     public class Component : Object
@@ -47,12 +50,20 @@ namespace UnityEngine
         public Transform GetChild(int index) { return null; }
         public Transform Find(string n) { return null; }
         public Quaternion localRotation { get; set; }
+        public Quaternion rotation { get; set; }
+        public Vector3 position { get; set; }
+        public Vector3 localPosition { get; set; }
+        public Vector3 localScale { get; set; }
+        public Vector3 forward { get { return default; } }
+        public void LookAt(Vector3 worldPosition) { }
     }
 
     public struct Quaternion
     {
         public static Quaternion identity { get { return default; } }
         public static Quaternion Euler(float x, float y, float z) { return default; }
+        public static Vector3 operator *(Quaternion rotation, Vector3 point) { return point; }
+        public static Quaternion operator *(Quaternion a, Quaternion b) { return a; }
     }
 
     public class RectTransform : Transform
@@ -81,6 +92,23 @@ namespace UnityEngine
         public float y;
         public float z;
         public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
+        public static Vector3 zero { get { return new Vector3(0, 0, 0); } }
+        public static Vector3 one { get { return new Vector3(1, 1, 1); } }
+        public static Vector3 up { get { return new Vector3(0, 1, 0); } }
+        public static Vector3 forward { get { return new Vector3(0, 0, 1); } }
+        public static Vector3 operator +(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
+        }
+        public static Vector3 operator -(Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
+        }
+        public static Vector3 operator *(Vector3 a, float d)
+        {
+            return new Vector3(a.x * d, a.y * d, a.z * d);
+        }
+        public Vector3 normalized { get { return this; } }
     }
 
     public struct Color
@@ -95,18 +123,34 @@ namespace UnityEngine
             this.r = r; this.g = g; this.b = b; this.a = a;
         }
         public static Color white { get { return new Color(1, 1, 1, 1); } }
+        public static Color black { get { return new Color(0, 0, 0, 1); } }
         public static Color Lerp(Color a, Color b, float t) { return a; }
+        public static Color operator *(Color a, float d)
+        {
+            return new Color(a.r * d, a.g * d, a.b * d, a.a);
+        }
     }
 
     public static class Mathf
     {
+        public const float Deg2Rad = (float)(Math.PI / 180.0);
+        public const float Rad2Deg = (float)(180.0 / Math.PI);
+        public const float PI = (float)Math.PI;
         public static int RoundToInt(float f) { return (int)Math.Round(f); }
         public static float Max(float a, float b) { return Math.Max(a, b); }
         public static int Max(int a, int b) { return Math.Max(a, b); }
         public static float Min(float a, float b) { return Math.Min(a, b); }
+        public static float Clamp(float v, float min, float max)
+        {
+            return v < min ? min : v > max ? max : v;
+        }
         public static float Clamp01(float v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
         public static float Abs(float v) { return Math.Abs(v); }
         public static float Sqrt(float v) { return (float)Math.Sqrt(v); }
+        public static float Sin(float v) { return (float)Math.Sin(v); }
+        public static float Cos(float v) { return (float)Math.Cos(v); }
+        public static float Atan2(float y, float x) { return (float)Math.Atan2(y, x); }
+        public static float Lerp(float a, float b, float t) { return a + (b - a) * Clamp01(t); }
         public static float PerlinNoise(float x, float y) { return 0.5f; }
     }
 
@@ -151,10 +195,13 @@ namespace UnityEngine
     public class Texture2D : Texture
     {
         public Texture2D(int width, int height, TextureFormat format, bool mipChain) { }
+        public Texture2D(int width, int height) { }
         public TextureWrapMode wrapMode { get; set; }
         public void SetPixel(int x, int y, Color color) { }
         public void SetPixels(Color[] colors) { }
         public void Apply() { }
+        public void ReadPixels(Rect source, int destX, int destY) { }
+        public byte[] EncodeToPNG() { return Array.Empty<byte>(); }
     }
 
     public class Sprite : Object
@@ -170,6 +217,11 @@ namespace UnityEngine
         public Color backgroundColor { get; set; }
         public int cullingMask { get; set; }
         public bool orthographic { get; set; }
+        public float fieldOfView { get; set; }
+        public float nearClipPlane { get; set; }
+        public float farClipPlane { get; set; }
+        public RenderTexture targetTexture { get; set; }
+        public void Render() { }
     }
 
     public enum RenderMode { ScreenSpaceOverlay = 0, ScreenSpaceCamera = 1, WorldSpace = 2 }
@@ -178,6 +230,8 @@ namespace UnityEngine
     {
         public RenderMode renderMode { get; set; }
         public int sortingOrder { get; set; }
+        public Camera worldCamera { get; set; }
+        public float planeDistance { get; set; }
     }
 
     public enum RuntimeInitializeLoadType

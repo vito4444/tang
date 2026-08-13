@@ -138,6 +138,7 @@
   "ward.rest_morning": { "zh": "歇至明日卯时", "en": "Rest until the Mao hour tomorrow" },
   "ward.back_study": { "zh": "回书房", "en": "Back to the Study" },
   "ward.npc_line": { "zh": "{0}　在{1} · {2}", "en": "{0} — at {1}, {2}" },
+  "ward.controls_hint": { "zh": "右键拖动环视 · 滚轮远近 · 方向键移步", "en": "Right-drag to look · scroll to zoom · arrow keys to move" },
   "study.go_out": { "zh": "出门看看", "en": "Step Outside" },
 
   "boot.loading": { "zh": "启程……", "en": "Setting out…" },

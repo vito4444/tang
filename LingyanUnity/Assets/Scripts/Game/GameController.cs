@@ -4,6 +4,7 @@ using Lingyan.Core.Officials;
 using Lingyan.Core.Saves;
 using Lingyan.Game.Services;
 using Lingyan.Game.UI;
+using Lingyan.Game.World3D;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -32,6 +33,18 @@ namespace Lingyan.Game
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
         private RectTransform _screenRoot;
+
+        /// <summary>主相机（UI 之外亦渲染坊景）。</summary>
+        public Camera MainCamera { get; private set; }
+
+        /// <summary>根画布（截图设备切换渲染模式时使用）。</summary>
+        public Canvas RootCanvas { get; private set; }
+
+        /// <summary>轨道相机（仅坊景屏启用）。</summary>
+        public OrbitCameraController Orbit { get; private set; }
+
+        /// <summary>槐里坊三维场景（懒构建，跨屏缓存）。</summary>
+        public WardScene Ward3D { get; private set; }
 
         private void Awake()
         {
@@ -66,7 +79,12 @@ namespace Lingyan.Game
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = InkPalette.Void;
             cam.cullingMask = 0;
-            cam.orthographic = true;
+            cam.fieldOfView = 42f;
+            cam.nearClipPlane = 0.3f;
+            cam.farClipPlane = 400f;
+            MainCamera = cam;
+            Orbit = camGo.AddComponent<OrbitCameraController>();
+            Orbit.enabled = false;
 
             var esGo = new GameObject("EventSystem");
             esGo.transform.SetParent(transform);
@@ -77,6 +95,7 @@ namespace Lingyan.Game
             canvasGo.transform.SetParent(transform);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            RootCanvas = canvas;
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
@@ -189,6 +208,8 @@ namespace Lingyan.Game
                 Destroy(_screenRoot.GetChild(i).gameObject);
             }
 
+            SetWard3DVisible(_screen == ScreenId.Ward);
+
             switch (_screen)
             {
                 case ScreenId.Creation:
@@ -206,6 +227,39 @@ namespace Lingyan.Game
                 default:
                     MainMenuScreen.Build(this, _screenRoot);
                     break;
+            }
+        }
+
+        /// <summary>坊景屏进出：三维场景显隐、相机模式切换。</summary>
+        private void SetWard3DVisible(bool visible)
+        {
+            if (visible)
+            {
+                if (Ward3D == null)
+                {
+                    Ward3D = WardSceneBuilder.Build(transform);
+                }
+                Ward3D.Root.SetActive(true);
+                MainCamera.cullingMask = ~0;
+                MainCamera.orthographic = false;
+                Orbit.enabled = true;
+                Orbit.ApplyTransform();
+                if (ActiveSave != null)
+                {
+                    Ward3D.ApplyHour(ActiveSave.Date.HourIndex, MainCamera);
+                }
+            }
+            else
+            {
+                if (Ward3D != null)
+                {
+                    Ward3D.Root.SetActive(false);
+                }
+                Orbit.enabled = false;
+                MainCamera.cullingMask = 0;
+                RenderSettings.fog = false;
+                MainCamera.clearFlags = CameraClearFlags.SolidColor;
+                MainCamera.backgroundColor = InkPalette.Void;
             }
         }
     }
