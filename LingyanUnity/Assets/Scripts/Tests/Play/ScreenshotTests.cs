@@ -134,6 +134,15 @@ namespace Lingyan.PlayTests
             c.GoCodex();
             yield return null;
             yield return Snap(c, "13_codex");
+
+            // 议亲（授个官、给足聘财，看四问全绿与六礼进度）
+            save.Offices.ZhiShiId = "xian_wei";
+            save.Offices.SanGuanId = "jiangshi_lang";
+            save.MoneyWen = 100_000;
+            Lingyan.Game.UI.MarriageScreen.Reset();
+            c.GoMarriage();
+            yield return null;
+            yield return Snap(c, "14_marriage");
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)
