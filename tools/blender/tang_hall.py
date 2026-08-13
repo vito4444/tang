@@ -226,6 +226,20 @@ def m_tile():
     return _cached("tile", build)
 
 
+def m_tile_under():
+    """底瓦/坡面板：瓦垄之间的仰瓦沟，深青灰低对比（第二十轮实机：
+    坡面板 UV 岛小，浅色一糊整个屋顶发白——底色本就该深）。"""
+    def build():
+        m, nodes, links, bsdf, vec = _base("tile_under")
+        cloud = _noise(nodes, links, vec, 6.0, detail=3.0)
+        base = _ramp(nodes, links, cloud.outputs["Fac"],
+                     0.2, (0.045, 0.050, 0.060, 1), 0.8, (0.085, 0.092, 0.105, 1))
+        links.new(base.outputs["Color"], bsdf.inputs["Base Color"])
+        _rough_noise(nodes, links, bsdf, vec, 0.78, 0.08, scale=14.0)
+        return m
+    return _cached("tile_under", build)
+
+
 def m_ridge():
     """脊饰/鸱尾：近黑陶，微光泽，风化色差。"""
     def build():
@@ -508,7 +522,7 @@ def roof_slope_mesh(ys):
             d = a + (nx + 1)
             faces.append((a, b, c, d) if ys > 0 else (a, d, c, b))
     ob = mesh_from_pydata(f"roof_deck_{'b' if ys > 0 else 'f'}", verts, faces,
-                          m_tile(), smooth=True)
+                          m_tile_under(), smooth=True)
     mod = ob.modifiers.new("sol", "SOLIDIFY")
     mod.thickness = 0.10
     return ob
@@ -710,7 +724,7 @@ def small_roof(width, depth, base_z, rise, tile_step=0.5, thick=0.10):
     for ys in (-1, 1):
         add_box("sroof", (width, slope_len, thick),
                 (0, ys * half / 2, base_z + rise / 2),
-                m_tile(), bevel=0.015, rot=(ys * -pitch, 0, 0))
+                m_tile_under(), bevel=0.015, rot=(ys * -pitch, 0, 0))
         n = int(width / tile_step)
         span = width - 0.3
         for i in range(n + 1):

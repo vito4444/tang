@@ -399,26 +399,32 @@ namespace Lingyan.Game.World3D
             var rng = new System.Random((int)(position.x * 73f + position.z * 131f));
             float height = 2.3f + (float)rng.NextDouble() * 0.9f;
 
-            MeshKit.Cylinder(tree.transform, "Trunk",
+            // 写实化：树干树冠均贴图（bark 竖沟 / foliage 碎叶噪声），
+            // 树冠改多球小簇——告别卡通三大球（第二十轮全景实测扎眼）
+            Material barkMat = TangColors.TexturedMat(
+                "Textures/bark", TangColors.Trunk, 1f, 2f);
+            Material leafMat = TangColors.TexturedMat(
+                "Textures/foliage", TangColors.Foliage, 2.2f, 2.2f);
+
+            GameObject trunk = MeshKit.Cylinder(tree.transform, "Trunk",
                 new Vector3(0f, height / 2f, 0f), 0.17f, height, TangColors.Trunk);
+            trunk.GetComponent<MeshRenderer>().sharedMaterial = barkMat;
             GameObject upper = MeshKit.Cylinder(tree.transform, "TrunkUpper",
                 new Vector3(0.12f, height * 0.8f, 0.06f), 0.12f, height * 0.5f,
                 TangColors.Trunk);
             upper.transform.localRotation = Quaternion.Euler(6f, 0f, -8f);
+            upper.GetComponent<MeshRenderer>().sharedMaterial = barkMat;
 
-            int crowns = 3 + rng.Next(2);
+            int crowns = 8 + rng.Next(4);
             for (int i = 0; i < crowns; i++)
             {
-                float k = 0.9f + (float)rng.NextDouble() * 0.14f;
-                Color leaf = new Color(
-                    TangColors.Foliage.r * k, TangColors.Foliage.g * k,
-                    TangColors.Foliage.b * k);
                 Vector3 offset = new Vector3(
-                    ((float)rng.NextDouble() - 0.5f) * 1.7f,
-                    height + 0.5f + ((float)rng.NextDouble() - 0.35f) * 1.0f,
-                    ((float)rng.NextDouble() - 0.5f) * 1.7f);
-                MeshKit.Sphere(tree.transform, "Crown" + i, offset,
-                    1.7f + (float)rng.NextDouble() * 1.2f, leaf);
+                    ((float)rng.NextDouble() - 0.5f) * 2.2f,
+                    height + 0.35f + ((float)rng.NextDouble() - 0.30f) * 1.3f,
+                    ((float)rng.NextDouble() - 0.5f) * 2.2f);
+                GameObject crown = MeshKit.Sphere(tree.transform, "Crown" + i, offset,
+                    0.9f + (float)rng.NextDouble() * 0.8f, TangColors.Foliage);
+                crown.GetComponent<MeshRenderer>().sharedMaterial = leafMat;
             }
         }
 

@@ -120,6 +120,28 @@ def earth_wall(size):
     return np.clip(rgb, 0, 1)
 
 
+def foliage(size):
+    # 槐树冠：高频叶簇噪声，深绿到黄绿——树冠球贴上即碎叶感
+    fine = fbm(size, 96, 3, seed=53, gain=0.6)
+    big = fbm(size, 8, 3, seed=59)
+    mix = np.clip(fine * 0.62 + big * 0.38, 0, 1)
+    rgb = colorize(mix, (0.130, 0.185, 0.085), (0.335, 0.430, 0.195))
+    # 零星亮叶
+    sparkle = fbm(size, 160, 2, seed=61)
+    rgb += ((sparkle > 0.82) * 0.06)[:, :, None]
+    return np.clip(rgb, 0, 1)
+
+
+def bark(size):
+    # 槐树皮：竖向沟壑（X 向条带扰动）+ 褐灰
+    x = np.linspace(0, 26 * 2 * np.pi, size)
+    ridges = 0.5 + 0.5 * np.sin(x)[None, :] * np.ones((size, 1))
+    wobble = fbm(size, 12, 4, seed=67)
+    mix = np.clip(ridges * 0.42 + wobble * 0.58, 0, 1)
+    rgb = colorize(mix, (0.205, 0.165, 0.125), (0.360, 0.305, 0.240))
+    return np.clip(rgb, 0, 1)
+
+
 def main():
     out_dir = sys.argv[1] if len(sys.argv) > 1 else "LingyanUnity/Assets/Resources/Textures"
     os.makedirs(out_dir, exist_ok=True)
@@ -128,6 +150,8 @@ def main():
     to_png(os.path.join(out_dir, "lane_dirt.png"), lane_dirt(size))
     to_png(os.path.join(out_dir, "plaster.png"), plaster(size))
     to_png(os.path.join(out_dir, "earth_wall.png"), earth_wall(size))
+    to_png(os.path.join(out_dir, "foliage.png"), foliage(size))
+    to_png(os.path.join(out_dir, "bark.png"), bark(size))
 
 
 if __name__ == "__main__":

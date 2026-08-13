@@ -33,10 +33,12 @@ namespace Lingyan.Game.World3D
             _transform.rotation = Quaternion.Euler(
                 (float)state.ElevationDeg, (float)state.AzimuthDeg + 180f, 0f);
             _light.color = new Color((float)state.R, (float)state.G, (float)state.B);
-            _light.intensity = (float)state.Intensity;
+            // 白天提一成半：烘焙 AO 已把暗部压进贴图，直射不加受光面就闷（第二十轮实测）
+            _light.intensity = (float)state.Intensity * (state.IsMoon ? 1.0f : 1.15f);
+            _light.shadowStrength = state.IsMoon ? 0.75f : 0.62f; // 影里要能辨构件
 
             Color lightColor = _light.color;
-            float ambientBoost = state.IsMoon ? 0.50f : 0.90f; // 夜里压暗，别把月夜照成阴天
+            float ambientBoost = state.IsMoon ? 0.55f : 1.12f; // 背光宅第二十轮实测死黑，抬环境
             Color ambient = new Color(
                 lightColor.r * (float)state.Ambient * ambientBoost + (state.IsMoon ? 0.02f : 0.05f),
                 lightColor.g * (float)state.Ambient * ambientBoost + (state.IsMoon ? 0.02f : 0.05f),
