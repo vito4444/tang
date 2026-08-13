@@ -41,7 +41,8 @@ namespace Lingyan.Core.Saves
             {
                 new Migrations.V0ToV1(),
                 new Migrations.V1ToV2(),
-                new Migrations.V2ToV3()
+                new Migrations.V2ToV3(),
+                new Migrations.V3ToV4()
             });
         }
 

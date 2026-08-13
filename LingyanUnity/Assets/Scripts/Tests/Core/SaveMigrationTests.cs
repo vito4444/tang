@@ -171,6 +171,72 @@ namespace Lingyan.Core.Tests
         }
 
         [Test]
+        public void V3_MigratesToV4_EmptyInventory_ProgressIntact()
+        {
+            // 真实的 v3 存档样式（阶段 5–10 时代出的档：有案、有考课、有婚约）
+            const string v3 = @"{
+                ""schemaVersion"": 3,
+                ""createdUtc"": ""2026-08-13T00:00:00Z"",
+                ""protagonist"": ""mingjing"",
+                ""name"": ""沈知白"",
+                ""entryPath"": null,
+                ""attributes"": { ""stamina"": 6, ""health"": 6, ""strength"": 4, ""wisdom"": 12 },
+                ""offices"": { ""zhishi"": ""xian_wei"", ""sanguan"": ""jiangshi_lang"", ""xunZhuan"": 0, ""jue"": null },
+                ""reputation"": { ""guansheng"": 33, ""minwang"": 41, ""jianghu"": 9 },
+                ""reputationLedger"": [],
+                ""moneyWen"": 5230,
+                ""date"": { ""era"": ""chuigong"", ""eraYear"": 4, ""month"": 5, ""day"": 2, ""hourIndex"": 7 },
+                ""storyFlags"": {},
+                ""counters"": {},
+                ""wantedLevel"": 0,
+                ""npcStates"": {},
+                ""cases"": { ""silk_case"": { ""status"": 1, ""opened"": ""chuigong:4:5:1:6"",
+                    ""deadline"": ""chuigong:4:5:11:6"", ""clues"": [""clue_ledger""],
+                    ""inferences"": [], ""accused"": null, ""outcome"": null, ""wrongful"": false } },
+                ""kaokeGrades"": [4],
+                ""housing"": ""hut"",
+                ""codex"": [""shi_chen""],
+                ""marriage"": { ""match"": null, ""rite"": 0, ""married"": false }
+            }";
+            SaveData restored = _migrator.Load(v3);
+            Assert.That(restored.SchemaVersion, Is.EqualTo(SaveData.CurrentVersion));
+            Assert.That(restored.Inventory, Is.Empty, "老档行囊为空，不得凭空生货");
+            Assert.That(restored.Cases["silk_case"].Clues, Does.Contain("clue_ledger"),
+                "查案进度一条不丢");
+            Assert.That(restored.KaoKeGrades[0], Is.EqualTo(4), "考课等第不丢");
+            Assert.That(restored.MoneyWen, Is.EqualTo(5230));
+        }
+
+        [Test]
+        public void V4_Inventory_RoundTrips()
+        {
+            SaveData save = FreshSave();
+            save.Inventory["gift_jiu"] = 2;
+            save.Inventory["gift_wenxuan"] = 1;
+            SaveData restored = _migrator.Load(_migrator.Serialize(save));
+            Assert.That(restored.Inventory["gift_jiu"], Is.EqualTo(2), "行囊件数一件不丢");
+            Assert.That(restored.Inventory["gift_wenxuan"], Is.EqualTo(1));
+        }
+
+        [Test]
+        public void V4_UnknownInventoryItem_IsCorrupt()
+        {
+            SaveData save = FreshSave();
+            save.Inventory["sword_of_plus_ten"] = 1;
+            Assert.Throws<SaveCorruptException>(() => _migrator.Load(_migrator.Serialize(save)),
+                "行囊里出现目录外物品必须响亮失败");
+        }
+
+        [Test]
+        public void V4_ZeroCountInventoryEntry_IsCorrupt()
+        {
+            SaveData save = FreshSave();
+            save.Inventory["gift_jiu"] = 0;
+            Assert.Throws<SaveCorruptException>(() => _migrator.Load(_migrator.Serialize(save)),
+                "0 件条目该在消耗时移除，落档即为损坏");
+        }
+
+        [Test]
         public void MissingMigration_FailsLoud()
         {
             var gappedMigrator = new SaveMigrator(Array.Empty<ISaveMigration>());

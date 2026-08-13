@@ -68,6 +68,19 @@ namespace Lingyan.Core.Saves
                 throw new SaveCorruptException("未知宅邸: " + data.HousingId);
             }
 
+            foreach (var pair in data.Inventory)
+            {
+                if (Social.GiftCatalog.Get(pair.Key) == null)
+                {
+                    throw new SaveCorruptException("行囊里有未知物品: " + pair.Key);
+                }
+                if (pair.Value < 1)
+                {
+                    throw new SaveCorruptException(
+                        "行囊件数非法: " + pair.Key + "=" + pair.Value);
+                }
+            }
+
             if (EraTable.Get(data.Date.EraId) == null)
             {
                 throw new SaveCorruptException("未知年号: " + data.Date.EraId);

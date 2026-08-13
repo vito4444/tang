@@ -104,24 +104,25 @@ namespace Lingyan.Core.Tests
         }
 
         [Test]
-        public void Gift_TasteMatters_MoneyGated()
+        public void Gift_TasteMatters_InventoryGated()
         {
             NpcProfile huan = NpcProfiles.Get("huan_fuzi"); // 好书籍绢帛
             var state = new NpcState();
             GiftDef book = GiftCatalog.Get("gift_wenxuan");
             GiftDef pepper = GiftCatalog.Get("gift_hujiao");
 
-            var liked = InteractionService.Gift(huan, state, book, 10_000, Date());
+            var liked = InteractionService.Gift(huan, state, book, ownedCount: 1, Date());
             Assert.That(liked.Success, Is.True);
-            Assert.That(liked.MoneyDeltaWen, Is.EqualTo(-800));
+            Assert.That(liked.MoneyDeltaWen, Is.EqualTo(0), "v4 起送礼不动钱——钱在市集买货时花");
             Assert.That(state.Ledger[0].Delta, Is.EqualTo(+8), "投其所好 +8");
 
-            var wrong = InteractionService.Gift(huan, state, pepper, 10_000, Date());
+            var wrong = InteractionService.Gift(huan, state, pepper, ownedCount: 3, Date());
             Assert.That(state.Ledger[1].Delta, Is.EqualTo(-4), "送错了反而减分");
             Assert.That(wrong.TextKey, Is.EqualTo("interact.result.gift_wrong"));
 
-            var broke = InteractionService.Gift(huan, state, book, 100, Date());
-            Assert.That(broke.Success, Is.False, "钱不够");
+            var empty = InteractionService.Gift(huan, state, book, ownedCount: 0, Date());
+            Assert.That(empty.Success, Is.False, "行囊里没有");
+            Assert.That(empty.TextKey, Is.EqualTo("interact.result.gift_none"));
             Assert.That(state.Ledger.Count, Is.EqualTo(2), "失败不记账");
         }
 

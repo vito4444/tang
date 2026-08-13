@@ -279,31 +279,41 @@ namespace Lingyan.Game.UI
             GameController c, RectTransform panel, NpcPanelRenderer.Data data,
             SaveData save, TangDate date)
         {
-            bool en = c.L10n.Locale == Locale.En;
-            var purse = new Lingyan.Core.Economy.Money(save.MoneyWen);
             UiKit.Text(UiKit.At(panel, "GiftHead", 0.5f, 0.79f, 700, 44),
-                "T", c.L10n.Tr("interact.gift") + " · " + c.L10n.Tr("study.money") + " "
-                    + (en ? purse.ToEn() : purse.ToZh()),
-                1.1f, InkPalette.Seal, TextAlignmentOptions.Center);
+                "T", c.L10n.Tr("interact.gift"), 1.1f,
+                InkPalette.Seal, TextAlignmentOptions.Center);
 
+            // 礼从行囊出（v4 起）：只有囊中有货才可送，市集购置
             float y = 0.71f;
             foreach (GiftDef gift in GiftCatalog.All)
             {
                 GiftDef captured = gift;
-                var price = new Lingyan.Core.Economy.Money(gift.PriceWen);
-                bool liked = data.Profile.Tastes.Contains(gift.Taste);
+                int owned = Lingyan.Core.Economy.MarketService.CountOf(save, gift.Id);
                 UiKit.TextButton(UiKit.At(panel, "Gift_" + gift.Id, 0.5f, y, 820, 48),
                     "Btn",
-                    c.L10n.Tr(gift.NameKey) + "　—　" + (en ? price.ToEn() : price.ToZh()),
+                    c.L10n.Tr(gift.NameKey) + "　—　" + c.L10n.TrF("market.owned", owned),
                     () =>
                     {
                         _giftMode = false;
-                        Run(c, save, data.Profile.NpcId, s => InteractionService.Gift(
-                            data.Profile, s, captured, save.MoneyWen, date));
+                        Run(c, save, data.Profile.NpcId, s =>
+                        {
+                            InteractionResult result = InteractionService.Gift(
+                                data.Profile, s, captured,
+                                Lingyan.Core.Economy.MarketService.CountOf(save, captured.Id),
+                                date);
+                            if (result.Success)
+                            {
+                                Lingyan.Core.Economy.MarketService.TakeOne(save, captured.Id);
+                            }
+                            return result;
+                        });
                     },
-                    1.0f, save.MoneyWen >= gift.PriceWen);
+                    1.0f, owned > 0);
                 y -= 0.075f;
             }
+            UiKit.Text(UiKit.At(panel, "GiftHint", 0.5f, 0.175f, 820, 40),
+                "T", c.L10n.Tr("npc.gift_hint"), 0.92f,
+                InkPalette.Faint, TextAlignmentOptions.Center);
             UiKit.TextButton(UiKit.At(panel, "GiftBack", 0.5f, 0.10f, 300, 50),
                 "Btn", c.L10n.Tr("creation.back"),
                 () => { _giftMode = false; c.GoNpc(data.Profile.NpcId); }, 1.05f);

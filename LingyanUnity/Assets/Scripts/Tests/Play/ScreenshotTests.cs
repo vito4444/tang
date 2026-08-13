@@ -83,9 +83,12 @@ namespace Lingyan.PlayTests
             Lingyan.Core.Social.NpcState state =
                 Lingyan.Core.Social.NpcStateStore.Load(save, "huan_fuzi");
             Lingyan.Core.Social.InteractionService.Greet(state, date);
+            save.Inventory["gift_wenxuan"] = 1; // 礼从行囊出（v4）：先备一部文选
             Lingyan.Core.Social.InteractionService.Gift(
                 Lingyan.Core.Social.NpcProfiles.Get("huan_fuzi"), state,
-                Lingyan.Core.Social.GiftCatalog.Get("gift_wenxuan"), save.MoneyWen, date);
+                Lingyan.Core.Social.GiftCatalog.Get("gift_wenxuan"),
+                Lingyan.Core.Economy.MarketService.CountOf(save, "gift_wenxuan"), date);
+            Lingyan.Core.Economy.MarketService.TakeOne(save, "gift_wenxuan");
             Lingyan.Core.Social.NpcStateStore.Store(save, "huan_fuzi", state);
             c.GoWard(save);
             yield return null;
@@ -149,6 +152,15 @@ namespace Lingyan.PlayTests
             c.GoMarriage();
             yield return null;
             yield return Snap(c, "14_marriage");
+
+            // 市集（午时开市；真按一次「买」，看结果行与囊中件数同框）
+            save.Date.HourIndex = 6;
+            Lingyan.Game.UI.MarketScreen.Reset();
+            c.GoMarket();
+            yield return null;
+            ClickButton("Buy_gift_jiu");
+            yield return null;
+            yield return Snap(c, "15_market");
         }
 
         /// <summary>按节点名点 UI 按钮（走 onClick，顺带验证按钮真挂了监听）。</summary>

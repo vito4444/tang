@@ -51,6 +51,8 @@ namespace Lingyan.Core.Terminology
                 case CodexEvent.SawArchitecture:
                     return Unlock(save, "chiwei", "dougong", "xiaang",
                         "zhilingchuang", "wutoumen");
+                case CodexEvent.VisitMarket:
+                    return Unlock(save, "shi_market", "guan_currency", "wen_currency");
                 default:
                     return new List<string>();
             }
@@ -74,6 +76,7 @@ namespace Lingyan.Core.Terminology
         Appointed = 3,
         SalaryDrawn = 4,
         Sparred = 5,
-        SawArchitecture = 6
+        SawArchitecture = 6,
+        VisitMarket = 7
     }
 }

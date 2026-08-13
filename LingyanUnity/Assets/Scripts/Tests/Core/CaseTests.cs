@@ -185,7 +185,8 @@ namespace Lingyan.Core.Tests
 
             // v2 老档（无 cases 字段）迁移后案表为空、其余不动
             string v2 = migrator.Serialize(save)
-                .Replace("\"schemaVersion\": 3", "\"schemaVersion\": 2");
+                .Replace("\"schemaVersion\": " + SaveData.CurrentVersion,
+                    "\"schemaVersion\": 2");
             Newtonsoft.Json.Linq.JObject json = Newtonsoft.Json.Linq.JObject.Parse(v2);
             json.Remove("cases");
             SaveData fromV2 = migrator.Load(json.ToString());

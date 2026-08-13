@@ -1,4 +1,5 @@
 using Lingyan.Core.Calendar;
+using Lingyan.Core.Economy;
 using Lingyan.Core.Localization;
 using Lingyan.Core.Saves;
 using Lingyan.Core.World;
@@ -93,14 +94,18 @@ namespace Lingyan.Game.UI
             bottomBg.color = new Color(0.05f, 0.045f, 0.035f, 0.55f);
             bottomBg.raycastTarget = false;
 
-            UiKit.TextButton(UiKit.At(root, "BtnWait", 0.30f, 0.052f, 380, 54),
+            UiKit.TextButton(UiKit.At(root, "BtnWait", 0.24f, 0.052f, 360, 54),
                 "Btn", c.L10n.Tr("ward.wait_hour"),
                 () => Advance(c, save, 1), 1.1f);
-            UiKit.TextButton(UiKit.At(root, "BtnRest", 0.53f, 0.052f, 420, 54),
+            UiKit.TextButton(UiKit.At(root, "BtnRest", 0.435f, 0.052f, 400, 54),
                 "Btn", c.L10n.Tr("ward.rest_morning"),
                 () => Advance(c, save,
                     TangDate.HoursUntilNext(save.Date.HourIndex, targetHourIndex: 3)), 1.1f);
-            UiKit.TextButton(UiKit.At(root, "BtnBack", 0.76f, 0.052f, 320, 54),
+            bool marketOpen = MarketService.IsOpenAt(save.Date.HourIndex);
+            UiKit.TextButton(UiKit.At(root, "BtnMarket", 0.625f, 0.052f, 320, 54),
+                "Btn", c.L10n.Tr(marketOpen ? "ward.go_market" : "ward.market_closed"),
+                () => { MarketScreen.Reset(); c.GoMarket(); }, 1.1f, marketOpen);
+            UiKit.TextButton(UiKit.At(root, "BtnBack", 0.81f, 0.052f, 320, 54),
                 "Btn", c.L10n.Tr("ward.back_study"),
                 () => c.GoStudy(save), 1.1f);
         }

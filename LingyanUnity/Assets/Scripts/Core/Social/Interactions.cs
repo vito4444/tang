@@ -82,18 +82,18 @@ namespace Lingyan.Core.Social
         }
 
         // ---- 送礼 ----
-        // 投其所好 +8；不合口味 -4（送错了反而减分）；钱不够直接失败。
+        // 礼从行囊出（市集购入，v4 起）；投其所好 +8；不合口味 -4（送错了反而减分）；
+        // 行囊里没有直接失败。消耗行囊由调用方在成功后执行（MarketService.TakeOne）。
         public static InteractionResult Gift(
-            NpcProfile profile, NpcState state, GiftDef gift, long purseWen, TangDate date)
+            NpcProfile profile, NpcState state, GiftDef gift, int ownedCount, TangDate date)
         {
             var result = new InteractionResult();
-            if (purseWen < gift.PriceWen)
+            if (ownedCount < 1)
             {
                 result.Success = false;
-                result.TextKey = "interact.result.gift_no_money";
+                result.TextKey = "interact.result.gift_none";
                 return result;
             }
-            result.MoneyDeltaWen = -gift.PriceWen;
             bool liked = profile.Tastes.Contains(gift.Taste);
             int delta = liked ? +8 : -4;
             state.Add(delta, liked ? "affinity.src.gift_liked" : "affinity.src.gift_wrong",

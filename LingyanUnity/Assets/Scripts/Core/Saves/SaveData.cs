@@ -10,7 +10,7 @@ namespace Lingyan.Core.Saves
     /// </summary>
     public sealed class SaveData
     {
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         [JsonProperty("schemaVersion", Required = Required.Always)]
         public int SchemaVersion { get; set; } = CurrentVersion;
@@ -82,6 +82,10 @@ namespace Lingyan.Core.Saves
         /// <summary>婚姻状态（v3 起；六礼推进与婚约，规格第九节）。</summary>
         [JsonProperty("marriage", Required = Required.Always)]
         public SaveMarriageState Marriage { get; set; } = new SaveMarriageState();
+
+        /// <summary>随身行囊（v4 起：物品 id → 件数；市集购入，送礼消耗）。</summary>
+        [JsonProperty("inventory", Required = Required.Always)]
+        public Dictionary<string, int> Inventory { get; set; } = new Dictionary<string, int>();
     }
 
     public sealed class SaveMarriageState
