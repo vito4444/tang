@@ -15,7 +15,9 @@ namespace Lingyan.Game.World3D
         {
             if (_material == null)
             {
-                Shader shader = Shader.Find("Lingyan/InkPost");
+                // Resources 直取（随包必含）；Find 兜底（第十七轮：仅 Find 会被玩家包裁剪）
+                Shader shader = Resources.Load<Shader>("Shaders/InkPost");
+                if (shader == null) { shader = Shader.Find("Lingyan/InkPost"); }
                 if (shader == null)
                 {
                     if (!_warned)

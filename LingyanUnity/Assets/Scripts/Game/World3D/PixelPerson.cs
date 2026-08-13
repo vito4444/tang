@@ -117,6 +117,19 @@ namespace Lingyan.Game.World3D
             return tex;
         }
 
+        /// <summary>
+        /// 贴片 shader：自带的 Lingyan/UnlitTransparent（在 Resources 随包必含）。
+        /// 内置 Unlit/Transparent 仅运行时 Find 会被玩家包裁剪（第十七轮出包核验），
+        /// 编辑器里两者皆在，兜底只为万一。
+        /// </summary>
+        private static Shader SpriteShader()
+        {
+            Shader shader = Resources.Load<Shader>("Shaders/UnlitTransparent");
+            if (shader != null) { return shader; }
+            Debug.LogError("[Lingyan] UnlitTransparent shader 缺失，回退内置 Unlit/Transparent");
+            return Shader.Find("Unlit/Transparent");
+        }
+
         /// <summary>立一个像素人：billboard 面片 + 脚底假影。高约 1.75m。</summary>
         public static GameObject Build(Transform parent, string name, Color robe)
         {
@@ -129,7 +142,7 @@ namespace Lingyan.Game.World3D
             quad.transform.localPosition = new Vector3(0f, 0.95f, 0f);
             quad.transform.localScale = new Vector3(1.17f, 1.75f, 1f);
 
-            var material = new Material(Shader.Find("Unlit/Transparent"));
+            var material = new Material(SpriteShader());
             material.mainTexture = Texture(robe, FrameIdle);
             var renderer = quad.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
@@ -146,7 +159,7 @@ namespace Lingyan.Game.World3D
             shadow.transform.localPosition = new Vector3(0f, 0.02f, 0f);
             shadow.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             shadow.transform.localScale = new Vector3(0.9f, 0.5f, 1f);
-            var shadowMaterial = new Material(Shader.Find("Unlit/Transparent"));
+            var shadowMaterial = new Material(SpriteShader());
             shadowMaterial.mainTexture = ShadowTexture();
             shadow.GetComponent<MeshRenderer>().sharedMaterial = shadowMaterial;
 
