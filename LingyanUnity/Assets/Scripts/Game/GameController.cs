@@ -87,6 +87,7 @@ namespace Lingyan.Game
             cam.nearClipPlane = 0.3f;
             cam.farClipPlane = 400f;
             MainCamera = cam;
+            camGo.AddComponent<InkPostEffect>();
             Orbit = camGo.AddComponent<OrbitCameraController>();
             Orbit.enabled = false;
 

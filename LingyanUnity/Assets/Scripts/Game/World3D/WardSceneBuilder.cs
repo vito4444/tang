@@ -316,12 +316,32 @@ namespace Lingyan.Game.World3D
             var tree = new GameObject(name);
             tree.transform.SetParent(t, false);
             tree.transform.localPosition = position;
-            MeshKit.Cylinder(tree.transform, "Trunk", new Vector3(0f, 1.3f, 0f), 0.18f, 2.6f,
+
+            // 以坐标为种子的确定性抖动：每棵树各有姿态，截图可复现
+            var rng = new System.Random((int)(position.x * 73f + position.z * 131f));
+            float height = 2.3f + (float)rng.NextDouble() * 0.9f;
+
+            MeshKit.Cylinder(tree.transform, "Trunk",
+                new Vector3(0f, height / 2f, 0f), 0.17f, height, TangColors.Trunk);
+            GameObject upper = MeshKit.Cylinder(tree.transform, "TrunkUpper",
+                new Vector3(0.12f, height * 0.8f, 0.06f), 0.12f, height * 0.5f,
                 TangColors.Trunk);
-            MeshKit.Sphere(tree.transform, "Crown1", new Vector3(0f, 3.4f, 0f), 2.9f,
-                TangColors.Foliage);
-            MeshKit.Sphere(tree.transform, "Crown2", new Vector3(0.9f, 2.9f, 0.5f), 2.0f,
-                TangColors.Foliage);
+            upper.transform.localRotation = Quaternion.Euler(6f, 0f, -8f);
+
+            int crowns = 3 + rng.Next(2);
+            for (int i = 0; i < crowns; i++)
+            {
+                float k = 0.9f + (float)rng.NextDouble() * 0.14f;
+                Color leaf = new Color(
+                    TangColors.Foliage.r * k, TangColors.Foliage.g * k,
+                    TangColors.Foliage.b * k);
+                Vector3 offset = new Vector3(
+                    ((float)rng.NextDouble() - 0.5f) * 1.7f,
+                    height + 0.5f + ((float)rng.NextDouble() - 0.35f) * 1.0f,
+                    ((float)rng.NextDouble() - 0.5f) * 1.7f);
+                MeshKit.Sphere(tree.transform, "Crown" + i, offset,
+                    1.7f + (float)rng.NextDouble() * 1.2f, leaf);
+            }
         }
 
         private static GameObject BuildNpcMarker(Transform t, NpcScheduleDef npc)
@@ -334,18 +354,20 @@ namespace Lingyan.Game.World3D
                 default: robe = new Color(0.78f, 0.74f, 0.66f); break;                    // 素衣
             }
 
-            var marker = new GameObject("Npc_" + npc.NpcId);
-            marker.transform.SetParent(t, false);
+            // 像素唐人贴片（阶段 9 画面方向：人物像素、场景写实）
+            GameObject marker = PixelPerson.Build(t, "Npc_" + npc.NpcId, robe);
 
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            body.transform.SetParent(marker.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0.85f, 0f);
-            body.transform.localScale = new Vector3(0.62f, 0.85f, 0.62f);
-            MeshKit.Paint(body, robe);
-
-            MeshKit.Sphere(marker.transform, "Head", new Vector3(0f, 1.78f, 0f), 0.42f,
-                new Color(0.85f, 0.72f, 0.60f));
+            // 隐形碰撞柱：悬停射线拾取用（贴片薄面不吃射线）
+            GameObject hit = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            hit.name = "HitProxy";
+            hit.transform.SetParent(marker.transform, false);
+            hit.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            hit.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+            var proxyRenderer = hit.GetComponent<MeshRenderer>();
+            if (proxyRenderer != null)
+            {
+                proxyRenderer.enabled = false;
+            }
             return marker;
         }
     }

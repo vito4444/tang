@@ -199,7 +199,12 @@ namespace UnityEngine
 
     public enum TextureWrapMode { Repeat = 0, Clamp = 1 }
 
-    public class Texture : Object { }
+    public enum FilterMode { Point = 0, Bilinear = 1, Trilinear = 2 }
+
+    public class Texture : Object
+    {
+        public FilterMode filterMode { get; set; }
+    }
 
     public class Texture2D : Texture
     {
@@ -222,6 +227,7 @@ namespace UnityEngine
 
     public class Camera : Behaviour
     {
+        public static Camera main { get { return null; } }
         public CameraClearFlags clearFlags { get; set; }
         public Color backgroundColor { get; set; }
         public int cullingMask { get; set; }

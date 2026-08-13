@@ -34,17 +34,11 @@ namespace Lingyan.Game.UI
 
             Vector3 arena = new Vector3(0f, 0f, -6f);
 
-            _playerBody = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            _playerBody.name = "DuelPlayer";
-            _playerBody.transform.SetParent(c.Ward3D.Root.transform, false);
-            _playerBody.transform.localScale = new Vector3(0.62f, 0.85f, 0.62f);
-            MeshKit.Paint(_playerBody, new Color(0.30f, 0.42f, 0.30f));
-
-            _rivalBody = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            _rivalBody.name = "DuelRival";
-            _rivalBody.transform.SetParent(c.Ward3D.Root.transform, false);
-            _rivalBody.transform.localScale = new Vector3(0.62f, 0.85f, 0.62f);
-            MeshKit.Paint(_rivalBody, new Color(0.55f, 0.38f, 0.22f));
+            // 像素唐人上场：玩家青绿袍、对手赭袍
+            _playerBody = PixelPerson.Build(
+                c.Ward3D.Root.transform, "DuelPlayer", new Color(0.30f, 0.42f, 0.30f));
+            _rivalBody = PixelPerson.Build(
+                c.Ward3D.Root.transform, "DuelRival", new Color(0.55f, 0.38f, 0.22f));
 
             _controller = c.Ward3D.Root.AddComponent<DuelController>();
             _controller.Begin(

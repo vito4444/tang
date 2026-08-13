@@ -72,7 +72,7 @@ docs/                    路线图、决策记录、术语政策、存档格式�
 ## 测试
 
 ```bash
-dotnet test core-dotnet/Lingyan.sln    # 101 项契约测试
+dotnet test core-dotnet/Lingyan.sln    # 158 项契约测试
 ```
 
 同一份测试源码挂在 Unity Test Runner（editmode）下，装好 Unity 后可在编辑器里复跑。

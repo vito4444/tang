@@ -66,7 +66,7 @@ ASMDEF_BODY = (
     "  assetBundleVariant: \n"
 )
 
-SKIP_EXTENSIONS = {".ttf", ".otf", ".fbx", ".blend"}
+SKIP_EXTENSIONS = {".ttf", ".otf", ".fbx", ".blend", ".shader"}
 
 BODY_BY_EXTENSION = {
     ".cs": MONO_BODY,

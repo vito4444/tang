@@ -21,6 +21,7 @@ namespace UnityEngine
 
     public class Renderer : Component
     {
+        public bool enabled { get; set; }
         public Material material { get; set; }
         public Material sharedMaterial { get; set; }
         public bool receiveShadows { get; set; }
@@ -37,9 +38,16 @@ namespace UnityEngine
     {
         public Material(Shader shader) { }
         public Color color { get; set; }
+        public Texture mainTexture { get; set; }
         public void SetFloat(string name, float value) { }
         public void SetColor(string name, Color value) { }
         public void EnableKeyword(string keyword) { }
+    }
+
+    public static class Graphics
+    {
+        public static void Blit(Texture source, RenderTexture dest) { }
+        public static void Blit(Texture source, RenderTexture dest, Material mat) { }
     }
 
     public enum PrimitiveType
