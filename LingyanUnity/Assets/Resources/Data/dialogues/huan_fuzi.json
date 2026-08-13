@@ -1,0 +1,112 @@
+{
+  "id": "dlg_huan_fuzi",
+  "npc": "huan_fuzi",
+  "entry": "greet",
+  "lines": [
+    {
+      "id": "greet",
+      "text": "dlg.huan.greet",
+      "choices": [
+        { "text": "dlg.huan.c_news", "goto": "news" },
+        {
+          "text": "dlg.huan.c_well",
+          "conditions": [
+            { "kind": "FlagSet", "flag": "case_opened_well_case" },
+            { "kind": "FlagNotSet", "flag": "huan_well_memory" }
+          ],
+          "effects": [
+            { "kind": "SetFlag", "flag": "huan_well_memory" },
+            { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" }
+          ],
+          "goto": "well_memory"
+        },
+        {
+          "text": "dlg.huan.c_ask_book",
+          "effects": [ { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" } ],
+          "goto": "book"
+        },
+        {
+          "text": "dlg.huan.c_borrow",
+          "conditions": [ { "kind": "MinAffinity", "value": 55 } ],
+          "effects": [
+            { "kind": "SetFlag", "flag": "borrowed_wenxuan" },
+            { "kind": "Affinity", "value": 3, "source": "affinity.src.conversation" }
+          ],
+          "goto": "lend"
+        },
+        { "text": "dlg.huan.c_leave", "goto": null }
+      ]
+    },
+    {
+      "id": "book",
+      "text": "dlg.huan.book",
+      "choices": [
+        { "text": "dlg.huan.c_noted", "goto": null },
+        {
+          "text": "dlg.huan.c_case_probe",
+          "conditions": [ { "kind": "FlagNotSet", "flag": "heard_silk_case" } ],
+          "goto": "case"
+        }
+      ]
+    },
+    {
+      "id": "news",
+      "text": "dlg.huan.news",
+      "choices": [
+        {
+          "text": "dlg.huan.c_case_ask",
+          "conditions": [ { "kind": "FlagNotSet", "flag": "heard_silk_case" } ],
+          "goto": "case"
+        },
+        {
+          "text": "dlg.huan.c_case_more",
+          "conditions": [ { "kind": "FlagSet", "flag": "heard_silk_case" } ],
+          "goto": "case"
+        },
+        { "text": "dlg.huan.c_thanks", "goto": null }
+      ]
+    },
+    {
+      "id": "case",
+      "text": "dlg.huan.case",
+      "choices": [
+        {
+          "text": "dlg.huan.c_case_noted",
+          "effects": [ { "kind": "SetFlag", "flag": "heard_silk_case" } ],
+          "goto": null
+        },
+        {
+          "text": "dlg.huan.c_case_press",
+          "conditions": [ { "kind": "MinAffinity", "value": 60 } ],
+          "effects": [
+            { "kind": "SetFlag", "flag": "heard_silk_case" },
+            { "kind": "SetFlag", "flag": "huan_hinted_case" },
+            { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" }
+          ],
+          "goto": "case2"
+        }
+      ]
+    },
+    {
+      "id": "case2",
+      "text": "dlg.huan.case2",
+      "choices": [
+        { "text": "dlg.huan.c_leave", "goto": null }
+      ]
+    },
+    {
+      "id": "lend",
+      "text": "dlg.huan.lend",
+      "choices": [
+        { "text": "dlg.huan.c_promise", "goto": null }
+      ]
+    },
+    {
+      "id": "well_memory",
+      "text": "dlg.huan.well_memory",
+      "choices": [
+        { "text": "dlg.huan.c_well_noted", "goto": null }
+      ]
+    }
+  ]
+}

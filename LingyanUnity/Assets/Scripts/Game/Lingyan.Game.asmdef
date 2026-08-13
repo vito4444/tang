@@ -1,0 +1,18 @@
+{
+    "name": "Lingyan.Game",
+    "rootNamespace": "Lingyan.Game",
+    "references": [
+        "Lingyan.Core",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

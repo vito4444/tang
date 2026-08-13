@@ -1,0 +1,31 @@
+# Unity generated
+LingyanUnity/[Ll]ibrary/
+LingyanUnity/[Tt]emp/
+LingyanUnity/[Oo]bj/
+LingyanUnity/[Ll]ogs/
+LingyanUnity/[Uu]ser[Ss]ettings/
+LingyanUnity/[Mm]emoryCaptures/
+LingyanUnity/[Rr]ecordings/
+LingyanUnity/*.csproj
+LingyanUnity/*.sln
+LingyanUnity/.vsconfig
+LingyanUnity/crashlytics-build.properties
+
+# Build outputs
+Builds/
+artifacts/
+*.apk
+*.unitypackage
+
+# .NET
+core-dotnet/**/bin/
+core-dotnet/**/obj/
+core-dotnet/**/TestResults/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vs/
+.vscode/

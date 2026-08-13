@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>Lingyan.CompileCheck</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- 只查语法与 API 拼写；游戏内行为由 Unity 侧编译与运行验证 -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../LingyanUnity/Assets/Scripts/Game/**/*.cs" />
+    <Compile Include="../../LingyanUnity/Assets/Scripts/Editor/**/*.cs" />
+    <Compile Include="../../LingyanUnity/Assets/Scripts/Tests/Play/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Lingyan.Core.Dotnet/Lingyan.Core.Dotnet.csproj" />
+    <ProjectReference Include="../Lingyan.UnityStubs/Lingyan.UnityStubs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.14.0" />
+  </ItemGroup>
+
+</Project>

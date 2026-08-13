@@ -1,0 +1,91 @@
+{
+  "id": "dlg_kang_san",
+  "npc": "kang_san",
+  "entry": "greet",
+  "lines": [
+    {
+      "id": "greet",
+      "text": "dlg.kang.greet",
+      "choices": [
+        { "text": "dlg.kang.c_market", "goto": "market" },
+        {
+          "text": "dlg.kang.c_treat",
+          "conditions": [ { "kind": "MinMoneyWen", "value": 15 } ],
+          "effects": [
+            { "kind": "MoneyWen", "value": -15 },
+            { "kind": "Affinity", "value": 3, "source": "affinity.src.treat" }
+          ],
+          "goto": "drink"
+        },
+        {
+          "text": "dlg.kang.c_case",
+          "conditions": [
+            { "kind": "FlagSet", "flag": "heard_silk_case" },
+            { "kind": "FlagNotSet", "flag": "kang_told_case" }
+          ],
+          "goto": "case_price"
+        },
+        {
+          "text": "dlg.kang.c_night",
+          "conditions": [ { "kind": "HourBetween", "value": 9, "value2": 0 } ],
+          "goto": "night"
+        },
+        { "text": "dlg.kang.c_leave", "goto": null }
+      ]
+    },
+    {
+      "id": "market",
+      "text": "dlg.kang.market",
+      "choices": [
+        { "text": "dlg.kang.c_noted", "goto": null },
+        { "text": "dlg.kang.c_back", "goto": "greet" }
+      ]
+    },
+    {
+      "id": "drink",
+      "text": "dlg.kang.drink",
+      "choices": [
+        { "text": "dlg.kang.c_back", "goto": "greet" }
+      ]
+    },
+    {
+      "id": "case_price",
+      "text": "dlg.kang.case_price",
+      "choices": [
+        {
+          "text": "dlg.kang.c_pay_tea",
+          "conditions": [ { "kind": "MinMoneyWen", "value": 50 } ],
+          "effects": [
+            { "kind": "MoneyWen", "value": -50 },
+            { "kind": "SetFlag", "flag": "kang_told_case" },
+            { "kind": "Affinity", "value": 2, "source": "affinity.src.conversation" }
+          ],
+          "goto": "case_talk"
+        },
+        { "text": "dlg.kang.c_no_pay", "goto": "stingy" }
+      ]
+    },
+    {
+      "id": "case_talk",
+      "text": "dlg.kang.case_talk",
+      "choices": [
+        { "text": "dlg.kang.c_thanks", "goto": null }
+      ]
+    },
+    {
+      "id": "stingy",
+      "text": "dlg.kang.stingy",
+      "choices": [
+        { "text": "dlg.kang.c_leave", "goto": null },
+        { "text": "dlg.kang.c_back", "goto": "greet" }
+      ]
+    },
+    {
+      "id": "night",
+      "text": "dlg.kang.night",
+      "choices": [
+        { "text": "dlg.kang.c_noted", "goto": null }
+      ]
+    }
+  ]
+}
