@@ -944,7 +944,10 @@ def bake_atlas(name, out_dir, size):
     meshes = [o for o in _scene_meshes() if o.name != "_ao_ground"]
     _select_meshes(meshes)
 
-    img_alb = _new_image(name + "_alb", size)
+    # 全部 Non-Color：烘焙结果按线性原样存 buffer，唯一一次 sRGB 编码在合成时手工做。
+    # （目标图标 sRGB 会被 Blender 写入时编码一次、存 PNG 再编码一次——第十九轮
+    # 实机核出的「淡粉柱/白瓦」即此二次编码提亮。）
+    img_alb = _new_image(name + "_alb", size, noncolor=True)
     img_ao = _new_image(name + "_ao", size, noncolor=True)
     img_rough = _new_image(name + "_rough", size, noncolor=True)
 
@@ -977,22 +980,48 @@ def bake_atlas(name, out_dir, size):
     img_rough.pixels.foreach_get(rough)
     alb = alb.reshape(-1, 4)
     ao_soft = ao.reshape(-1, 4)[:, 0] * 0.72 + 0.28  # AO 柔化：留环境光余地
+    rgb_linear = alb[:, :3] * ao_soft[:, None]
+
+    # 唯一一次 sRGB 编码（Unity 按 sRGB 采样 PNG，编码值正好还原线性色）
+    rgb = np.clip(rgb_linear, 0.0, 1.0)
+    srgb = np.where(rgb <= 0.0031308,
+                    rgb * 12.92,
+                    1.055 * np.power(rgb, 1.0 / 2.4) - 0.055)
+
     out = np.empty_like(alb)
-    out[:, 0] = alb[:, 0] * ao_soft
-    out[:, 1] = alb[:, 1] * ao_soft
-    out[:, 2] = alb[:, 2] * ao_soft
+    out[:, :3] = srgb
     out[:, 3] = 1.0 - rough.reshape(-1, 4)[:, 0]  # A 通道 = smoothness
 
-    img_out = bpy.data.images.new(name + "_albedo", size, size,
-                                  alpha=True, float_buffer=True)
-    img_out.pixels.foreach_set(out.ravel())
-    img_out.filepath_raw = os.path.join(out_dir, name + "_albedo.png")
-    img_out.file_format = "PNG"
-    img_out.save()
-    print("[tang_hall] 图集落盘:", img_out.filepath_raw)
+    # 手写 PNG，绕开 Blender Image.save 的场景色管（AgX/Filmic 会再掺一手——
+    # 第十九轮复烘仍偏亮的元凶）。Blender buffer 行序自下而上，PNG 自上而下，翻转。
+    path = os.path.join(out_dir, name + "_albedo.png")
+    pixels = (np.clip(out, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
+    rows = pixels.reshape(size, size, 4)[::-1]
+    _write_png(path, rows)
+    print("[tang_hall] 图集落盘:", path)
 
-    for img in (img_alb, img_ao, img_rough, img_out):
+    for img in (img_alb, img_ao, img_rough):
         bpy.data.images.remove(img)
+
+
+def _write_png(path, rows):
+    """无依赖 8bit RGBA PNG 写出（rows: HxWx4 uint8，自上而下）。"""
+    import struct
+    import zlib
+
+    h, w = rows.shape[:2]
+    raw = b"".join(b"\x00" + rows[y].tobytes() for y in range(h))
+
+    def chunk(tag, data):
+        c = tag + data
+        return struct.pack(">I", len(data)) + c + struct.pack(">I", zlib.crc32(c))
+
+    png = b"\x89PNG\r\n\x1a\n"
+    png += chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress(raw, 6))
+    png += chunk(b"IEND", b"")
+    with open(path, "wb") as fh:
+        fh.write(png)
 
 
 BAKE_SIZE = {
