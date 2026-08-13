@@ -16,7 +16,32 @@
    会先触发规则 1）。
 6. 读档失败必须把 `ReasonKey`（本地化键）呈现给玩家，绝不静默回主菜单。
 
-## v1 结构（当前）
+## v2 增量（当前版本）
+
+阶段 3 引入两个字段（`V1ToV2` 迁移器补空结构与零值——这两个字段在 v1 时代不存在，
+语义正确的默认不属于"静默补齐关键进度"）：
+
+```json
+{
+  "schemaVersion": 2,
+  "wantedLevel": 0,
+  "npcStates": {
+    "huan_fuzi": {
+      "met": true,
+      "lastGreetDay": "chuigong:4:3:17",
+      "ledger": [ { "delta": 8, "source": "affinity.src.gift_liked", "param": "gift.wenxuan", "date": "chuigong:4:3:17:5" } ],
+      "flags": [ "insulted_proud_zheng_wu" ]
+    }
+  }
+}
+```
+
+- `wantedLevel`：通缉值（偷窃败露等累积，后续武侯缉拿玩法的依据）。
+- `npcStates`：每名 NPC 的好感账本（来源键 + 参数 + 日期戳）、相识标记、
+  每日寒暄限流戳、互动旗标（隐藏支线钩子）。
+- 迁移测试锁定：真实 v1 档升 v2 后钱/官身/剧情旗标逐项不丢；v0 档沿链升到当前版。
+
+## v1 结构（历史）
 
 ```json
 {
