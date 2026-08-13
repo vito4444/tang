@@ -20,6 +20,9 @@ namespace Lingyan.Game.UI
 
         public static int BasePx { get { return _basePx; } }
 
+        /// <summary>全局按钮点击回声（拨弦音等），TextButton 一律先走它再走业务回调。</summary>
+        public static Action OnButtonClick;
+
         public static void Configure(FontService fonts, int basePx)
         {
             _fonts = fonts;
@@ -233,7 +236,11 @@ namespace Lingyan.Game.UI
             button.interactable = interactable;
             if (onClick != null)
             {
-                button.onClick.AddListener(() => onClick());
+                button.onClick.AddListener(() =>
+                {
+                    OnButtonClick?.Invoke();
+                    onClick();
+                });
             }
             if (interactable)
             {

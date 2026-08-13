@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Lingyan.Core.Localization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -17,11 +18,41 @@ namespace Lingyan.Core.Settings
         public const int MinScalePercent = 100;
         public const int MaxScalePercent = 160;
 
+        public const int VolumeStep = 10;
+
+        /// <summary>
+        /// 分辨率档位（宽 × 高）。(0, 0) 表示"随桌面"（原生分辨率，不强制切换）。
+        /// </summary>
+        public static readonly IReadOnlyList<(int Width, int Height)> ResolutionPresets =
+            new List<(int, int)>
+            {
+                (0, 0),
+                (1280, 720),
+                (1600, 900),
+                (1920, 1080),
+                (2560, 1440),
+                (3840, 2160),
+            };
+
         [JsonProperty("locale")]
         public string LocaleCode { get; set; } = "zh-Hans";
 
         [JsonProperty("fontScalePercent")]
         public int FontScalePercent { get; set; } = 100;
+
+        /// <summary>主音量（0–100，档距 10）。</summary>
+        [JsonProperty("masterVolumePercent")]
+        public int MasterVolumePercent { get; set; } = 80;
+
+        [JsonProperty("fullscreen")]
+        public bool Fullscreen { get; set; } = true;
+
+        /// <summary>分辨率宽（0 = 随桌面）。只允许取 ResolutionPresets 中的档位。</summary>
+        [JsonProperty("resolutionWidth")]
+        public int ResolutionWidth { get; set; }
+
+        [JsonProperty("resolutionHeight")]
+        public int ResolutionHeight { get; set; }
 
         [JsonIgnore]
         public Locale Locale
@@ -41,10 +72,55 @@ namespace Lingyan.Core.Settings
             }
         }
 
+        [JsonIgnore]
+        public float MasterVolume01
+        {
+            get { return MasterVolumePercent / 100f; }
+        }
+
+        /// <summary>当前分辨率在档位表中的下标；脏值回落 0（随桌面）。</summary>
+        [JsonIgnore]
+        public int ResolutionIndex
+        {
+            get
+            {
+                for (int i = 0; i < ResolutionPresets.Count; i++)
+                {
+                    if (ResolutionPresets[i].Width == ResolutionWidth
+                        && ResolutionPresets[i].Height == ResolutionHeight)
+                    {
+                        return i;
+                    }
+                }
+                return 0;
+            }
+        }
+
         public void ClampScale()
         {
             if (FontScalePercent < MinScalePercent) { FontScalePercent = MinScalePercent; }
             if (FontScalePercent > MaxScalePercent) { FontScalePercent = MaxScalePercent; }
+        }
+
+        /// <summary>把所有可越界字段拉回合法档位（音量取整到 10 的倍数并夹到 0–100）。</summary>
+        public void ClampAll()
+        {
+            ClampScale();
+            int volume = (int)Math.Round(MasterVolumePercent / (double)VolumeStep) * VolumeStep;
+            if (volume < 0) { volume = 0; }
+            if (volume > 100) { volume = 100; }
+            MasterVolumePercent = volume;
+            var preset = ResolutionPresets[ResolutionIndex];
+            ResolutionWidth = preset.Width;
+            ResolutionHeight = preset.Height;
+        }
+
+        /// <summary>切到下一档分辨率（到底绕回）。</summary>
+        public void CycleResolution()
+        {
+            var next = ResolutionPresets[(ResolutionIndex + 1) % ResolutionPresets.Count];
+            ResolutionWidth = next.Width;
+            ResolutionHeight = next.Height;
         }
 
         public string ToJson()
@@ -67,7 +143,25 @@ namespace Lingyan.Core.Settings
                 {
                     settings.FontScalePercent = scale.Value<int>();
                 }
-                settings.ClampScale();
+                JToken volume = root["masterVolumePercent"];
+                if (volume != null && volume.Type == JTokenType.Integer)
+                {
+                    settings.MasterVolumePercent = volume.Value<int>();
+                }
+                JToken fullscreen = root["fullscreen"];
+                if (fullscreen != null && fullscreen.Type == JTokenType.Boolean)
+                {
+                    settings.Fullscreen = fullscreen.Value<bool>();
+                }
+                JToken width = root["resolutionWidth"];
+                JToken height = root["resolutionHeight"];
+                if (width != null && width.Type == JTokenType.Integer
+                    && height != null && height.Type == JTokenType.Integer)
+                {
+                    settings.ResolutionWidth = width.Value<int>();
+                    settings.ResolutionHeight = height.Value<int>();
+                }
+                settings.ClampAll();
                 return settings;
             }
             catch (Exception)

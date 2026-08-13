@@ -53,6 +53,34 @@ namespace UnityEngine
 
     public class MonoBehaviour : Behaviour { }
 
+    public static class Screen
+    {
+        public static bool fullScreen { get; set; }
+        public static void SetResolution(int width, int height, bool fullscreen) { }
+    }
+
+    public sealed class AudioClip : Object
+    {
+        public static AudioClip Create(
+            string name, int lengthSamples, int channels, int frequency, bool stream)
+        {
+            return new AudioClip();
+        }
+        public bool SetData(float[] data, int offsetSamples) { return true; }
+    }
+
+    public sealed class AudioSource : Behaviour
+    {
+        public bool playOnAwake { get; set; }
+        public float spatialBlend { get; set; }
+        public void PlayOneShot(AudioClip clip, float volumeScale) { }
+    }
+
+    public sealed class AudioListener : Behaviour
+    {
+        public static float volume { get; set; }
+    }
+
     public class Transform : Component
     {
         public void SetParent(Transform parent, bool worldPositionStays) { }

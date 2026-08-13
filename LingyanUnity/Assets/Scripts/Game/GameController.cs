@@ -21,6 +21,7 @@ namespace Lingyan.Game
         public SettingsService Settings { get; private set; }
         public SaveService Saves { get; private set; }
         public FontService Fonts { get; private set; }
+        public AudioService Audio { get; private set; }
 
         /// <summary>当前进行中的存档（进入书房后非空）。</summary>
         public SaveData ActiveSave { get; private set; }
@@ -69,8 +70,14 @@ namespace Lingyan.Game
 
             Saves = new SaveService();
 
+            Audio = new AudioService();
+            Audio.Attach(gameObject);
+            Audio.ApplyVolume(Settings.Current.MasterVolume01);
+            DisplayService.Apply(Settings.Current);
+
             BuildCameraAndCanvas();
             UiKit.Configure(Fonts, Settings.Current.EffectiveBaseFontPx);
+            UiKit.OnButtonClick = Audio.PlayClick;
             SmokeLog();
         }
 
@@ -93,6 +100,7 @@ namespace Lingyan.Game
             cam.nearClipPlane = 0.3f;
             cam.farClipPlane = 400f;
             MainCamera = cam;
+            camGo.AddComponent<AudioListener>();
             camGo.AddComponent<InkPostEffect>();
             Orbit = camGo.AddComponent<OrbitCameraController>();
             Orbit.enabled = false;

@@ -32,7 +32,7 @@ namespace Lingyan.Game.Services
 
         public void Save()
         {
-            Current.ClampScale();
+            Current.ClampAll();
             File.WriteAllText(FilePath, Current.ToJson());
         }
     }
