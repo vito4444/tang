@@ -67,7 +67,6 @@ namespace Lingyan.Game.UI
             UiKit.PanelBox(panel, "Bg");
 
             MatchDef current = MatchCatalog.Get(_matchId);
-            NpcPanelRenderer.Data npcLike = null;
             int affinity = 55; // 议亲对象暂非坊内 NPC：好感以对象档案基线折算（后续接 NPC 化）
             RankGrade? grade = SanGuanTable.Get(save.Offices.SanGuanId)?.Grade;
             bool betrothedToOther = save.Marriage.MatchId != null

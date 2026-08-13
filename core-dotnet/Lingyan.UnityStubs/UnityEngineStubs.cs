@@ -33,9 +33,11 @@ namespace UnityEngine
         public Transform transform { get { return null; } }
         public T AddComponent<T>() where T : Component { return null; }
         public T GetComponent<T>() { return default; }
+        public T GetComponentInChildren<T>() { return default; }
         public void SetActive(bool value) { }
         public bool activeSelf { get { return true; } }
         public static GameObject CreatePrimitive(PrimitiveType type) { return null; }
+        public static GameObject Find(string name) { return null; }
     }
 
     public class Component : Object
