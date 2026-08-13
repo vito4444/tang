@@ -183,7 +183,7 @@
   "interact.steal": { "zh": "偷窃", "en": "Steal" },
   "interact.propose": { "zh": "提亲", "en": "Propose Marriage" },
   "interact.hire": { "zh": "雇佣", "en": "Hire" },
-  "interact.locked": { "zh": "（后续章节实装）", "en": "(arrives in a later chapter)" },
+  "interact.locked": { "zh": "（待实装）", "en": "(soon)" },
   "interact.away": { "zh": "人不在坊中，无从攀谈。", "en": "They are not in the ward just now." },
 
   "interact.result.greet_first": { "zh": "通名见礼，算是相识了。", "en": "Names exchanged, courtesies made—you are acquainted now." },
