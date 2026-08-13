@@ -28,7 +28,10 @@ namespace Lingyan.Game
         /// <summary>主菜单顶部待展示的错误（如读档失败），展示一次后清空。</summary>
         public string PendingErrorKey { get; private set; }
 
-        private enum ScreenId { MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel }
+        private enum ScreenId
+        {
+            MainMenu, Creation, Study, Settings, Ward, Npc, Dialogue, Case, Duel, Codex
+        }
 
         private ScreenId _screen = ScreenId.MainMenu;
         private ScreenId _settingsReturnTo = ScreenId.MainMenu;
@@ -78,8 +81,7 @@ namespace Lingyan.Game
         private void BuildCameraAndCanvas()
         {
             var camGo = new GameObject("Main Camera");
-            // 名字不等于标签：BillboardSprite 靠 Camera.main（查 MainCamera 标签）转身。
-            // 不打标签则像素人永不面向相机——对决屏 LookAt 一转，玩家面片背面朝镜头被剔除隐身。
+            // 标签必须是 MainCamera：Camera.main 靠它检索，公告牌朝向依赖（第十轮实机虫）
             camGo.tag = "MainCamera";
             camGo.transform.SetParent(transform);
             var cam = camGo.AddComponent<Camera>();
@@ -161,6 +163,11 @@ namespace Lingyan.Game
         {
             ActiveSave = save;
             _screen = ScreenId.Ward;
+            // 进坊即长见识：市井制度与眼前的唐构入典籍
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.EnterWard);
+            Lingyan.Core.Terminology.CodexService.OnEvent(
+                save, Lingyan.Core.Terminology.CodexEvent.SawArchitecture);
             Rebuild();
         }
 
@@ -190,6 +197,13 @@ namespace Lingyan.Game
         public void GoDuel()
         {
             _screen = ScreenId.Duel;
+            Rebuild();
+        }
+
+        /// <summary>典籍（Codex 百科）。</summary>
+        public void GoCodex()
+        {
+            _screen = ScreenId.Codex;
             Rebuild();
         }
 
@@ -292,6 +306,9 @@ namespace Lingyan.Game
                     break;
                 case ScreenId.Duel:
                     DuelScreen.Build(this, _screenRoot);
+                    break;
+                case ScreenId.Codex:
+                    CodexScreen.Build(this, _screenRoot);
                     break;
                 default:
                     MainMenuScreen.Build(this, _screenRoot);

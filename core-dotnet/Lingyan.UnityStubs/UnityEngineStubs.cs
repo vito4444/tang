@@ -29,6 +29,7 @@ namespace UnityEngine
     public sealed class GameObject : Object
     {
         public GameObject(string name) { this.name = name; }
+        public string tag { get; set; }
         public Transform transform { get { return null; } }
         public T AddComponent<T>() where T : Component { return null; }
         public T GetComponent<T>() { return default; }
