@@ -117,6 +117,15 @@ namespace Lingyan.PlayTests
             c.GoCase();
             yield return null;
             yield return Snap(c, "11_case_board");
+
+            // 对决屏（郑五应战；开场站位+满条 HUD）
+            c.GoWard(save);
+            yield return null;
+            Lingyan.Game.UI.DuelScreen.Start(c, "zheng_wu");
+            yield return null;
+            yield return null;
+            yield return Snap(c, "12_duel");
+            Lingyan.Game.UI.DuelScreen.Cleanup(c);
         }
 
         private static void SetRig(GameController c, Vector3 target, float yaw, float pitch, float distance)
